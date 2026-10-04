@@ -1,0 +1,568 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MOBA - Home wireframe</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bagel+Fat+One&display=swap" rel="stylesheet">
+<style>
+/* ===== MID-FI MONO WIREFRAME. No brand color yet - greyscale only.
+   Real Bagel Fat One display type + real MOBA copy + real proportions.
+   Dashed boxes = assets to be produced. Blue-grey italics = build notes. ===== */
+:root{
+  --ink:#1b1b1e; --g900:#2c2c30; --g700:#55555c; --g600:#565660;
+  --g500:#636369; --g400:#9a9aa1; --g300:#cccace; --g200:#e2e1e4;
+  --g100:#eeedef; --paper:#f6f5f3; --white:#fff;
+  --note:#5566844d; --noteink:#4b5b74;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--paper);color:var(--ink);
+  font:16px/1.5 ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  -webkit-font-smoothing:antialiased}
+.bigword,.footword,.h1{overflow-wrap:break-word;max-width:100%}
+.d{font-family:"Bagel Fat One","Arial Black",sans-serif;font-weight:400;text-transform:uppercase;letter-spacing:.005em;line-height:.92}
+img,svg{display:block}
+a{color:inherit}
+.wrap{max-width:440px;margin:0 auto;padding:0 18px;position:relative}
+section{position:relative}
+
+/* ---- wireframe primitives ---- */
+.ph{border:2px dashed var(--g400);background:
+  repeating-linear-gradient(135deg,transparent 0 11px,#0000000a 11px 12px),var(--g100);
+  border-radius:14px;display:flex;align-items:center;justify-content:center;text-align:center;
+  color:var(--g600);padding:16px;font-size:13px;font-weight:600;position:relative;min-height:84px}
+.ph .kind{position:absolute;top:8px;left:8px;background:var(--g700);color:var(--white);
+  font-size:11px;font-weight:800;letter-spacing:.06em;padding:3px 8px;border-radius:999px;text-transform:uppercase}
+.note{border:1.5px solid #556684aa;background:#5566840f;color:var(--noteink);
+  font-size:12.5px;font-style:italic;padding:9px 12px 9px 13px;border-radius:10px;margin:10px 0;position:relative}
+.note::before{content:"NOTE";font-style:normal;font-weight:800;font-size:9.5px;letter-spacing:.1em;
+  background:var(--noteink);color:#fff;padding:2px 6px;border-radius:5px;margin-right:8px;vertical-align:1px}
+.note b{font-style:normal}
+.chip{display:inline-flex;align-items:center;gap:5px;border:2px solid var(--ink);background:var(--white);
+  border-radius:999px;padding:5px 12px;font-size:12px;font-weight:700;line-height:1}
+.chip.mut{border-color:var(--g400);color:var(--g600)}
+.pill{display:inline-flex;align-items:center;gap:8px;border:2px solid var(--ink);background:var(--ink);
+  color:var(--white);border-radius:999px;padding:12px 20px;font-weight:800;font-size:15px;cursor:pointer;
+  text-decoration:none}
+.pill.ghost{background:var(--white);color:var(--ink)}
+.eyebrow{font-size:12px;font-weight:800;letter-spacing:.12em;color:var(--g600);text-transform:uppercase}
+.hang{color:var(--g500);font-weight:700}
+
+/* scalloped awning edge */
+.scallop{height:16px;background:radial-gradient(circle at 12px 16px,var(--seg,var(--ink)) 11px,transparent 12px) repeat-x;
+  background-size:24px 16px}
+.scallop.up{transform:rotate(180deg)}
+
+/* ---- top bar ---- */
+.topbar{position:sticky;top:0;z-index:40;background:var(--white);border-bottom:2px solid var(--ink)}
+.topbar .row{display:flex;align-items:center;justify-content:space-between;height:54px}
+.logo{font-size:24px}
+.logo small{display:block;font:600 11px/1 ui-sans-serif,sans-serif;letter-spacing:.1em;color:var(--g600);text-transform:uppercase;margin-top:3px}
+.iconbtn{width:42px;height:42px;border:2px solid var(--ink);border-radius:12px;background:var(--white);
+  display:grid;place-items:center;font-size:12px;font-weight:800;cursor:pointer}
+
+/* ---- hero ---- */
+.hero{padding:22px 0 0}
+.seal{width:96px;height:96px;border-radius:50%;border:2px dashed var(--g400);display:grid;place-items:center;
+  font-size:11px;font-weight:700;color:var(--g600);text-align:center;padding:10px;position:absolute;right:14px;top:8px;
+  background:var(--white);animation:spin 18s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.h1{font-size:clamp(52px,16vw,74px);margin:30px 0 0}
+.sub{margin:16px 0 16px;color:var(--g700);font-weight:500;max-width:34ch}
+.heroctas{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.tvwrap{margin:22px 0 0;position:relative}
+.tv{aspect-ratio:4/3;border:2px dashed var(--g400);border-radius:20px;background:
+  repeating-linear-gradient(135deg,transparent 0 11px,#0000000a 11px 12px),var(--g100);
+  display:grid;place-items:center;text-align:center;color:var(--g600);font-weight:600;padding:18px;position:relative}
+.tv .kind{position:absolute;top:10px;left:10px;background:var(--g700);color:#fff;font-size:11px;font-weight:800;letter-spacing:.06em;padding:3px 8px;border-radius:999px;text-transform:uppercase}
+.tv .knobs{position:absolute;right:-2px;top:14%;display:flex;flex-direction:column;gap:9px}
+.tv .knobs i{width:14px;height:14px;border:2px solid var(--g400);border-radius:50%;display:block}
+.tvfoot{display:flex;justify-content:center;gap:6px;margin-top:8px}
+.tvfoot i{width:7px;height:7px;border-radius:50%;background:var(--g400)}
+
+/* pojangmacha scene */
+.scene{margin-top:22px;position:relative}
+.scene .stall{border:2px dashed var(--g400);border-bottom:none;border-radius:16px 16px 0 0;background:
+  repeating-linear-gradient(135deg,transparent 0 11px,#0000000a 11px 12px),var(--g100);
+  min-height:150px;display:grid;place-items:center;text-align:center;color:var(--g600);font-weight:600;padding:18px}
+
+/* ---- marquee ---- */
+.marq{border-top:2px solid var(--ink);border-bottom:2px solid var(--ink);background:var(--g900);color:var(--white);
+  overflow:hidden;white-space:nowrap;padding:12px 0}
+.marq .track{display:inline-flex;gap:26px;animation:slide 22s linear infinite;will-change:transform}
+.marq.rev .track{animation-direction:reverse;animation-duration:26s}
+.marq .it{font-size:18px;font-weight:800;letter-spacing:.02em;display:inline-flex;gap:26px;align-items:center}
+.marq .it::after{content:"\2726";color:var(--g500)}
+@keyframes slide{to{transform:translateX(-50%)}}
+
+/* ---- section heading ---- */
+.sec{padding:40px 0}
+.sechead{margin-bottom:18px}
+.sechead h2{font-size:clamp(34px,10vw,48px);margin:6px 0 0}
+.sechead p{color:var(--g700);margin:8px 0 0;max-width:40ch}
+
+/* menu CTA (single block, leads to menu.html) */
+.bigword{font-size:clamp(60px,20vw,104px);margin:0 0 4px;line-height:.82}
+.bigword .hang{display:block;font-size:.34em;letter-spacing:.2em;color:var(--g400);-webkit-text-stroke:0}
+.menucta{border:2px solid var(--ink);border-radius:24px;background:var(--white);padding:34px 20px 30px;text-align:center;position:relative;overflow:hidden}
+.menucta .bigword{margin:8px 0 18px}
+.menucta .bigword .hang{margin-top:.5em;line-height:1}
+.menucta p{color:var(--g700);max-width:36ch;margin:0 auto 22px}
+.menucta .pill{font-size:18px;padding:16px 30px}
+.menucta .stats{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin-top:18px}
+
+/* ===== NOODLE THREAD (the one colour exception in this wireframe) =====
+   One SVG strand laid over the whole page. z-index 1: it paints OVER
+   normal content (TV, stall, marquee, notes) and UNDER anything marked
+   .over (menu card, headings, pot front). Path is rebuilt from the
+   .nd markers on load/resize, so it survives copy and layout changes. */
+:root{--noodle:#F4D27F;--noodle-hi:#FFF3D1}
+#noodleLayer{position:absolute;left:0;top:0;width:100%;pointer-events:none;z-index:1;overflow:visible}
+#noodleLayer svg{position:absolute;left:0;top:0;overflow:visible}
+.over{position:relative;z-index:2}
+.nd{display:block;height:0}
+.beat{position:absolute;transform:translate(-50%,-50%);background:var(--noteink);color:#fff;font-size:11px;font-weight:800;
+  padding:5px 10px;border-radius:999px;white-space:nowrap;letter-spacing:.03em;box-shadow:0 0 0 2px var(--paper)}
+.slurp-hint{display:inline-flex;align-items:center;gap:6px;margin-top:10px;font-size:13px;font-weight:700;color:var(--g600)}
+.slurp-hint svg{width:34px;height:22px}
+
+/* signature: the pot stage */
+.sig .sechead{text-align:center}
+.sig .bigword{margin-top:8px}
+.stage{position:relative;height:clamp(560px,92vh,820px)}
+.pot{position:absolute;left:50%;bottom:0;width:min(84vw,380px);aspect-ratio:320/240;transform:translateX(-50%)}
+.pot svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+.pot .back{z-index:0}
+.pot .front{z-index:2}
+.sticker{position:absolute;z-index:3;font-family:"Bagel Fat One","Arial Black",sans-serif;line-height:1}
+.st-huruk{left:-4%;top:-18%;font-size:clamp(30px,9vw,44px);background:var(--white);border:2px solid var(--ink);
+  border-radius:14px;padding:6px 10px 4px;transform:rotate(-10deg)}
+.st-huruk small{display:block;font:800 11px/1.2 ui-sans-serif,sans-serif;letter-spacing:.08em;color:var(--g600)}
+.st-price{right:-4%;top:-6%;width:88px;height:88px;border-radius:50%;background:var(--ink);color:#fff;display:grid;place-items:center;
+  font-size:22px;text-align:center;transform:rotate(12deg)}
+.st-price small{display:block;font:800 11px/1 ui-sans-serif,sans-serif;letter-spacing:.03em;color:var(--g300);margin-bottom:2px}
+.sigcap{text-align:center;padding-top:22px}
+.sigcap p{color:var(--g700);max-width:40ch;margin:0 auto 16px}
+
+/* testimonials */
+.revs{display:flex;gap:14px;overflow-x:auto;padding:6px 2px 14px;scroll-snap-type:x mandatory}
+.rev{min-width:240px;scroll-snap-align:start;border:2px solid var(--ink);border-radius:16px;background:var(--white);padding:16px;transform:rotate(-2deg)}
+.rev:nth-child(2n){transform:rotate(1.6deg)}
+.rev .stars{letter-spacing:3px;color:var(--g500);font-size:14px}
+.rev .ln{height:9px;background:var(--g200);border-radius:5px;margin:9px 0}
+.rev .ln.s{width:70%}
+.rev .by{font-size:12px;color:var(--g600);font-weight:700;margin-top:10px}
+
+/* word ring */
+.ring{position:relative;aspect-ratio:1/1;max-width:300px;margin:18px auto 0;border:2px dashed var(--g400);border-radius:50%;display:grid;place-items:center;color:var(--g500);text-align:center}
+.ringtxt{position:absolute;inset:0;animation:spin 26s linear infinite;color:var(--g400);font-weight:800;font-size:13px}
+.ringtxt span{position:absolute;left:50%;top:6px;transform-origin:0 144px}
+
+/* gather / visit CTA */
+.visit{border:2px solid var(--ink);border-radius:20px;background:var(--g900);color:var(--white);padding:26px 20px;text-align:center}
+.visit h2{font-size:clamp(34px,10vw,50px);margin:0 0 6px}
+.visit .rowinfo{display:grid;gap:10px;margin:16px 0;text-align:left}
+.visit .rowinfo div{border-top:1px solid #ffffff2e;padding-top:10px;font-size:13px;color:var(--g300)}
+.visit .rowinfo b{color:#fff;display:block;font-size:11px;letter-spacing:.1em;text-transform:uppercase;margin-bottom:2px}
+
+/* footer */
+footer{background:var(--ink);color:#fff;padding:30px 0 0;margin-top:44px}
+footer .cols{display:grid;grid-template-columns:1fr 1fr;gap:20px 14px}
+footer .cols b{font-size:11px;letter-spacing:.12em;color:var(--g400);text-transform:uppercase;display:block;margin-bottom:8px}
+footer .cols a{display:block;color:#eee;text-decoration:none;font-weight:600;padding:4px 0}
+.footword{font-size:clamp(84px,30vw,150px);text-align:center;color:#fff;margin:22px 0 0;line-height:.8}
+.footstrip{border-top:2px solid #fff;margin-top:10px;overflow:hidden;white-space:nowrap;padding:10px 0}
+.footstrip .track{display:inline-flex;gap:22px;animation:slide 30s linear infinite;color:var(--g300);font-weight:800;font-size:13px}
+.legal{text-align:center;color:var(--g300);font-size:12px;padding:16px;letter-spacing:.04em}
+
+/* sticky view-menu */
+.sticky{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:45;transition:opacity .3s,transform .3s}
+.sticky.hide{opacity:0;transform:translateX(-50%) translateY(20px);pointer-events:none}
+
+/* legend banner */
+.legend{background:var(--noteink);color:#fff;font-size:12px;padding:8px 14px;text-align:center;font-weight:600}
+.legend b{background:#ffffff26;padding:1px 7px;border-radius:5px;margin:0 3px}
+
+@media (min-width:760px){
+  .wrap{max-width:1040px;padding:0 40px}
+  .hero .cols2{display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:center}
+  .tvwrap{margin-top:0}
+  .h1{font-size:clamp(66px,8vw,104px)}
+  .menucta{padding:56px 40px 48px}
+}
+@media (min-width:760px){
+  .stage{height:clamp(640px,96vh,900px)}
+  .st-huruk{left:-18%}
+  .st-price{right:-16%}
+}
+@media (prefers-reduced-motion:reduce){
+  *{animation:none!important;scroll-behavior:auto!important}
+}
+</style>
+</head>
+<body>
+
+<div class="legend">MID-FI WIREFRAME - greyscale only (colour comes in the design pass). <b>Dashed</b> = asset to produce. <b>Blue italics</b> = build note.</div>
+
+<!-- TOP BAR -->
+<header class="topbar">
+  <div class="wrap row">
+    <div class="logo d">MOBA<small>Korean Resto-Cafe</small></div>
+    <div style="display:flex;gap:10px;align-items:center">
+      <a href="#menu" class="chip" style="text-decoration:none">VIEW MENU</a>
+      <button class="iconbtn" aria-label="Open menu">☰</button>
+    </div>
+  </div>
+</header>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="wrap">
+    <div class="cols2">
+      <div class="left">
+        <div class="eyebrow">모바 · Est. in Seoul flavours</div>
+        <h1 class="h1 d">Gather<br>for food</h1>
+        <p class="sub">Korean comfort, made in our kitchen every day. Scan, sit, slurp - no app, no wait.</p>
+        <div class="heroctas">
+          <a href="#menu" class="pill">VIEW MENU ↓</a>
+          <a href="#story" class="pill ghost">Our story</a>
+        </div>
+        <div class="slurp-hint"><svg viewBox="0 0 34 22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M2 4c10-2 20 2 24 14M26 18l-6-2M26 18l2-6"/></svg>scroll to slurp</div>
+        <i class="nd" data-x=".93" data-xd=".5"></i>
+      </div>
+      <div class="right tvwrap">
+        <div class="seal">EST · IN SEOUL FLAVOURS · MADE IN OUR KITCHEN ·</div>
+        <div class="tv">
+          <span class="kind">Video</span>
+          <div class="knobs"><i></i><i></i><i></i></div>
+          RETRO TV (the star)<br>vintage "gather for food" ad clip plays inside
+        </div>
+        <div class="tvfoot"><i></i><i></i><i></i><i></i></div>
+      </div>
+    </div>
+
+    <div class="note"><b>Noodle thread, beat 1:</b> on load ONE noodle draws itself over the headline: it lies across the top of GATHER, curls over the R, wraps past the end of FOOD and hangs down the right side, clear of the copy and buttons. On scroll it runs down past the TV and the stall and lands in the pot at the Rameyon section. Scroll up and it slurps back. The TV stays a supporting element.</div>
+    <i class="nd" data-x=".94" data-xd=".97" data-beat="2 · drapes over the stall"></i>
+
+    <!-- pojangmacha scene grounds the hero -->
+    <div class="scene">
+      <div class="stall">
+        <div>
+          <span class="chip mut" style="margin-bottom:8px">Grey line illustration</span><br>
+          POJANGMACHA street stall — steam, stools, hanging bulbs, MOBA sign.<br>B&amp;W / grey line art, full-bleed, grounds the hero.
+        </div>
+      </div>
+    </div>
+    <i class="nd" data-x=".9" data-xd=".95"></i>
+  </div>
+  <div class="scallop" style="--seg:var(--ink)"></div>
+</section>
+
+<!-- MARQUEE 1 -->
+<div class="marq" aria-hidden="true">
+  <div class="track">
+    <span class="it">GATHER FOR FOOD</span><span class="it">같이 밥 먹어요</span><span class="it">100% IN-HOUSE SAUCES</span><span class="it">모바</span>
+    <span class="it">GATHER FOR FOOD</span><span class="it">같이 밥 먹어요</span><span class="it">100% IN-HOUSE SAUCES</span><span class="it">모바</span>
+  </div>
+</div>
+<i class="nd" data-x=".14" data-xd=".08" data-dy="-24" data-beat="3 · crosses the marquee"></i>
+
+<!-- MENU CTA (the only menu element on home; goes to menu.html) -->
+<section class="sec" id="menu">
+  <div class="wrap">
+    <i class="nd" data-x=".05" data-xd=".05" data-beat="4 · tucks behind the card"></i>
+    <div class="menucta over">
+      <div class="eyebrow">직접 만듭니다 · Made here, every day</div>
+      <h2 class="bigword d">The Menu<span class="hang d">메뉴</span></h2>
+      <p>12 categories, every dish made in our kitchen. Pick your plate.</p>
+      <a href="menu.html" class="pill">OPEN THE MENU →</a>
+      <div class="stats"><span class="chip mut">12 categories</span><span class="chip mut">~123 dishes</span><span class="chip mut">prices in ₹</span></div>
+    </div>
+    <div class="note"><b>Menu CTA only.</b> No category cards or dish photos on home. This button opens the separate <b>menu page</b> (menu.html) — designed next. The category grid and dish bottom sheet move there.</div>
+    <i class="nd" data-x=".05" data-xd=".05"></i>
+  </div>
+</section>
+
+<!-- SIGNATURE: RAMEYON POT (id=story: temporary target of the hero "Our story" button) -->
+<section class="sec sig" id="story">
+  <div class="wrap">
+    <div class="sechead over">
+      <div class="eyebrow">Slurp-worthy · every bowl ₹339</div>
+      <h2 class="bigword d">Rameyon<span class="hang d">라면</span></h2>
+    </div>
+    <i class="nd" data-x=".05" data-xd=".06"></i>
+
+    <!-- the stage: noodle S-bends here (the blue-poster shape) then drops into the pot -->
+    <div class="stage" id="stage">
+      <div class="pot" id="pot">
+        <!-- BACK half: rim + broth. Sits UNDER the noodle so the strand is seen falling in. -->
+        <svg class="back" viewBox="0 0 320 240" aria-hidden="true">
+          <ellipse cx="160" cy="90" rx="130" ry="28" fill="#eeedef" stroke="#1b1b1e" stroke-width="4"/>
+          <ellipse cx="160" cy="93" rx="114" ry="20" fill="#9a9aa1"/>
+        </svg>
+        <!-- FRONT half: pile, toppings, pot body, chopsticks. Sits OVER the noodle. -->
+        <svg class="front" viewBox="0 0 320 240" aria-hidden="true">
+          <g id="pile">
+            <path d="M74 98c14-30 30-30 42-4s28 26 42 0 28-28 42-2 26 26 46 2" fill="none" stroke="#1b1b1e" stroke-width="15" stroke-linecap="round"/>
+            <path d="M74 98c14-30 30-30 42-4s28 26 42 0 28-28 42-2 26 26 46 2" fill="none" stroke="var(--noodle)" stroke-width="9" stroke-linecap="round"/>
+            <path d="M92 104c12-22 26-22 36 0s26 18 38-2 26-18 38 0 20 14 32 2" fill="none" stroke="#1b1b1e" stroke-width="15" stroke-linecap="round"/>
+            <path d="M92 104c12-22 26-22 36 0s26 18 38-2 26-18 38 0 20 14 32 2" fill="none" stroke="var(--noodle)" stroke-width="9" stroke-linecap="round"/>
+          </g>
+          <g class="tp" data-from="-160,-200,-40"><rect x="86" y="66" width="24" height="22" rx="5" fill="#fff" stroke="#1b1b1e" stroke-width="3" transform="rotate(-12 98 77)"/><rect x="110" y="60" width="22" height="20" rx="5" fill="#fff" stroke="#1b1b1e" stroke-width="3" transform="rotate(9 121 70)"/></g>
+          <g class="tp" data-from="0,-260,30"><path d="M146 74c6-14 22-16 30-6 8-6 20 0 16 10-2 8-14 10-22 6-8 6-26 2-24-10z" fill="#636369" stroke="#1b1b1e" stroke-width="3"/></g>
+          <g class="tp" data-from="170,-210,50"><ellipse cx="216" cy="80" rx="28" ry="19" fill="#fff" stroke="#1b1b1e" stroke-width="3" transform="rotate(-10 216 80)"/><circle cx="218" cy="80" r="10" fill="#cccace" stroke="#1b1b1e" stroke-width="2.5"/></g>
+          <g class="tp" data-from="120,-240,-30"><path d="M244 96c10-22 30-26 38-14-10 4-22 14-30 20z" fill="#cccace" stroke="#1b1b1e" stroke-width="3"/></g>
+          <g class="tp" data-from="0,-300,0" fill="none" stroke="#1b1b1e" stroke-width="3">
+            <circle cx="132" cy="62" r="5"/><circle cx="188" cy="58" r="5"/><circle cx="104" cy="92" r="4.5"/><circle cx="238" cy="70" r="5"/><circle cx="170" cy="96" r="4.5"/>
+          </g>
+          <path d="M30 90A130 28 0 0 0 290 90L268 204Q160 236 52 204Z" fill="#e2e1e4" stroke="#1b1b1e" stroke-width="4" stroke-linejoin="round"/>
+          <path d="M84 150c8 6 18 6 26 0M200 176c8 6 16 6 24 0" fill="none" stroke="#9a9aa1" stroke-width="3" stroke-linecap="round"/>
+          <rect x="2" y="100" width="34" height="14" rx="7" fill="#e2e1e4" stroke="#1b1b1e" stroke-width="4"/>
+          <rect x="284" y="100" width="34" height="14" rx="7" fill="#e2e1e4" stroke="#1b1b1e" stroke-width="4"/>
+          <g id="sticks">
+            <path d="M186 98L306 6" stroke="#1b1b1e" stroke-width="9" stroke-linecap="round"/><path d="M186 98L306 6" stroke="#cccace" stroke-width="4" stroke-linecap="round"/>
+            <path d="M204 100L318 24" stroke="#1b1b1e" stroke-width="9" stroke-linecap="round"/><path d="M204 100L318 24" stroke="#cccace" stroke-width="4" stroke-linecap="round"/>
+          </g>
+          <g id="steam" fill="none" stroke="#9a9aa1" stroke-width="4" stroke-linecap="round">
+            <path d="M120 50c-10-12 10-20 0-34"/><path d="M160 44c-10-12 10-22 0-38"/><path d="M200 50c-10-12 10-20 0-34"/>
+          </g>
+          <g id="spark" fill="#1b1b1e">
+            <path d="M40 40l4 10 10 4-10 4-4 10-4-10-10-4 10-4z"/><path d="M286 150l3 7 7 3-7 3-3 7-3-7-7-3 7-3z"/><path d="M20 170l3 7 7 3-7 3-3 7-3-7-7-3 7-3z"/>
+          </g>
+        </svg>
+        <div class="sticker st-huruk" id="huruk">후루룩<small>HURUK · the slurp</small></div>
+        <div class="sticker st-price" id="price"><div><small>EVERY BOWL</small>₹339</div></div>
+      </div>
+    </div>
+
+    <div class="sigcap over">
+      <p>Seven bowls, one price. Fiery, creamy, smoky, buldak and more. Pick tofu, paneer, chicken or fish.</p>
+      <a href="menu.html#rameyon" class="pill">See all Rameyon →</a>
+    </div>
+    <div class="note">Pot = Korean yellow nickel ramyeon pot (양은냄비), not a Japanese ceramic bowl. <b>Beat 5:</b> the noodle runs the poster's S-bends across the empty stage. <b>Beat 6:</b> it drops in, the pot squashes, the pile rises, toppings fly in and GATHER (tofu, kimchi, egg, bok choy, scallions), chopsticks land, steam draws, "후루룩" pops. All scrubbed by scroll, no pin.</div>
+  </div>
+</section>
+
+<!-- TESTIMONIALS -->
+<section class="sec">
+  <div class="wrap">
+    <div class="sechead"><div class="eyebrow">from real foodies</div><h2 class="d">Real talk from<br>real foodies</h2></div>
+    <div class="revs">
+      <div class="rev"><div class="stars">★★★★★</div><div class="ln"></div><div class="ln"></div><div class="ln s"></div><div class="by">— placeholder review</div></div>
+      <div class="rev"><div class="stars">★★★★★</div><div class="ln"></div><div class="ln s"></div><div class="by">— placeholder review</div></div>
+      <div class="rev"><div class="stars">★★★★★</div><div class="ln"></div><div class="ln"></div><div class="ln s"></div><div class="by">— placeholder review</div></div>
+    </div>
+    <div class="note">Tilted sticker cards (Chompo pattern). <b>Needs real reviews</b> from the client / Google / Instagram.</div>
+  </div>
+</section>
+
+<!-- COLLAGE MARQUEE (hot dog) -->
+<div class="marq rev" aria-hidden="true">
+  <div class="track">
+    <span class="it">FRESH OFF THE WOK</span><span class="it">모바 TOWN</span><span class="it">NEW DROP</span>
+    <span class="it">FRESH OFF THE WOK</span><span class="it">모바 TOWN</span><span class="it">NEW DROP</span>
+  </div>
+</div>
+<section class="sec" style="padding-top:26px">
+  <div class="wrap">
+    <div class="ph" style="aspect-ratio:3/2"><span class="kind">Collage</span>K-CORN DOGG collage — the hot dog stretches / spreads across the band (cheese pull), cut-out hands + food, wavy type behind. (Chompo "NEW MEAL / THW TOWN" treatment.)</div>
+  </div>
+</section>
+
+<!-- WORD RING -->
+<section class="sec">
+  <div class="wrap">
+    <div class="ring">
+      <div class="ringtxt" id="ringtxt" aria-hidden="true"></div>
+      <div style="max-width:120px"><span class="chip mut">Bear, center</span><br><small style="color:var(--g600)">deadpan bear, arms crossed</small></div>
+    </div>
+    <div style="display:flex;gap:8px;justify-content:center;margin-top:14px;flex-wrap:wrap">
+      <span class="chip">spicy</span><span class="chip">cheezy</span><span class="chip">slurp</span><span class="chip">bokki</span>
+    </div>
+    <div class="note">Repeating "모바 MOBA" ring with the bear in the middle (Chompo's CHOMPO ring). Playful tag stickers.</div>
+  </div>
+</section>
+
+<!-- GATHER / VISIT CTA (no ordering) -->
+<section class="sec">
+  <div class="wrap">
+    <div class="visit">
+      <div class="eyebrow" style="color:var(--g400)">같이 밥 먹어요</div>
+      <h2 class="d">Come gather<br>with us</h2>
+      <div class="rowinfo">
+        <div><b>Hours</b> placeholder — client to confirm</div>
+        <div><b>Find us</b> placeholder address — client to confirm</div>
+        <div><b>Follow the bear</b> @moba — Instagram handle TBD</div>
+      </div>
+      <a href="#" class="pill ghost">Follow the bear</a>
+      <div class="note" style="color:var(--g400);border-color:var(--g500)">Replaces Chompo's "ORDER NOW" box — MOBA is a <b>static menu, no ordering</b>. This block is gather/visit + social instead.</div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="scallop up" style="--seg:var(--ink);background-color:var(--paper)"></div>
+  <div class="wrap">
+    <div class="cols">
+      <div><b>Menu</b><a href="#menu">Signatures</a><a href="#menu">Rameyon</a><a href="#menu">Boba Bar</a><a href="#menu">Desserts</a></div>
+      <div><b>MOBA</b><a href="#story">Our story</a><a href="#">Find us</a><a href="#">Instagram</a><a href="#">Spice guide</a></div>
+    </div>
+    <div class="footword d">MOBA</div>
+  </div>
+  <div class="footstrip" aria-hidden="true">
+    <div class="track">
+      <span>RAMEYON · TOPPOKI · GIMBAP · MANDU · BOBA · CORN DOGG · NACHOS · BULGOGI · KIMCHI ·&nbsp;</span>
+      <span>RAMEYON · TOPPOKI · GIMBAP · MANDU · BOBA · CORN DOGG · NACHOS · BULGOGI · KIMCHI ·&nbsp;</span>
+    </div>
+  </div>
+  <div class="legal">ALL PRICES IN INR · TAXES EXTRA · 맛있게 드세요</div>
+</footer>
+
+<!-- sticky view menu -->
+<a href="#menu" class="pill sticky" id="sticky">VIEW MENU ↓</a>
+
+<!-- noodle thread layer (built by JS) -->
+<div id="noodleLayer" aria-hidden="true"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+<script>
+// word ring text
+const rt=document.getElementById('ringtxt');
+const word="모바 MOBA 모바 MOBA 모바 MOBA 모바 MOBA ";
+rt.innerHTML=[...word].map((ch,i)=>`<span style="transform:rotate(${i*(360/word.length)}deg)">${ch}</span>`).join('');
+
+
+// sticky hide when menu in view / near footer
+const sticky=document.getElementById('sticky');
+const menu=document.getElementById('menu');
+addEventListener('scroll',()=>{
+  const r=menu.getBoundingClientRect();
+  sticky.classList.toggle('hide', r.top<innerHeight*0.5);
+},{passive:true});
+
+
+// ===== NOODLE THREAD =====
+// One path: TV -> .nd markers (vertical S-curves) -> stage S-bends (horizontal,
+// the blue-poster shape) -> drop into the pot mouth. The drawn length is chosen
+// so the noodle TIP sits on a "reading line" at 62% of the viewport, i.e. it
+// always leads the eye, whatever the path is doing horizontally.
+(function(){
+  const reduce=matchMedia('(prefers-reduced-motion:reduce)').matches;
+  const NS='http://www.w3.org/2000/svg', layer=document.getElementById('noodleLayer');
+  const svg=document.createElementNS(NS,'svg'); layer.appendChild(svg);
+  const mk=c=>{const p=document.createElementNS(NS,'path');
+    Object.assign(p.style,{fill:'none',stroke:c,strokeLinecap:'round',strokeLinejoin:'round'});svg.appendChild(p);return p;};
+  const shadow=mk('#1b1b1e'),outline=mk('#1b1b1e'),body=mk('var(--noodle)'),shine=mk('var(--noodle-hi)');
+  shadow.style.opacity=.16;
+  const strands=[shadow,outline,body,shine];
+  const READ=.62;
+  let total=1,lens=[],ys=[],headLen=0,mouthY=0,introDone=false;
+  const state={len:0};
+
+  function build(){
+    const vw=document.documentElement.clientWidth, desk=vw>=760, W=desk?34:22, sy=scrollY;
+    // HEAD: drape over GATHER, curl over the R, then down past the end of FOOD.
+    const h1=document.querySelector('.hero .h1'), fs=parseFloat(getComputedStyle(h1).fontSize);
+    const tn=[...h1.childNodes].filter(n=>n.nodeType===3&&n.textContent.trim());
+    const lr=n=>{const r=document.createRange();r.selectNodeContents(n);return r.getBoundingClientRect();};
+    const A=lr(tn[0]), B=lr(tn[1]);
+    const y1=A.top+sy+fs*.28-W*.2;                  // resting on the tops of the GATHER letters
+    const amp=fs*.06, r=fs*.3;
+    const x0=A.left+fs*.12, x1=A.left+fs*.45, xR=A.right-fs*.18;
+    const xRR=Math.min(Math.max(B.right+fs*.4,A.right+r*1.4),vw-W*.9);
+    let head=`M${x0},${y1+fs*.4} C${x0},${y1+fs*.1} ${x1-fs*.22},${y1} ${x1},${y1}`;
+    for(let i=0,dx=(xR-x1)/3;i<3;i++){const a=x1+dx*i,b=a+dx,sg=i%2?1:-1;
+      head+=` C${a+dx*.35},${y1+sg*amp} ${b-dx*.35},${y1+sg*amp} ${b},${y1}`;}
+    // curl: up and over the R, crossing itself, then out to the right
+    head+=` C${xR+r*1.7},${y1} ${xR+r*1.7},${y1-r*2.1} ${xR+r*.55},${y1-r*2.1}`;
+    head+=` C${xR-r*.6},${y1-r*2.1} ${xR-r*.4},${y1-r*.2} ${xR+r*.9},${y1+r*.1}`;
+    const G={x:xRR,y:B.bottom+sy+fs*.15};
+    head+=` C${xRR},${y1+r*.3} ${xRR},${G.y-fs*.6} ${G.x},${G.y}`;
+    const pts=[G];
+    const beats=[{x:Math.min(xRR,vw-110),y:G.y+fs*3,t:'1 · drapes over the headline'}];
+    document.querySelectorAll('.nd').forEach(m=>{
+      const fx=parseFloat(desk&&m.dataset.xd?m.dataset.xd:m.dataset.x);
+      const p={x:fx*vw,y:m.getBoundingClientRect().top+sy+(+m.dataset.dy||0)};
+      pts.push(p); if(m.dataset.beat)beats.push({x:Math.min(Math.max(p.x,80),vw-80),y:p.y,t:m.dataset.beat});
+    });
+    body.setAttribute('d',head); headLen=body.getTotalLength();
+    let d=head;
+    for(let i=1;i<pts.length;i++){const a=pts[i-1],b=pts[i],k=(b.y-a.y)*.55;
+      d+=` C${a.x},${a.y+k} ${b.x},${b.y-k} ${b.x},${b.y}`;}
+
+    // stage: horizontal U-bends. A cubic from (cx,y) with both controls at
+    // (cx±Wc, ...) leaves and arrives horizontally, so bends chain smoothly.
+    const st=document.getElementById('stage').getBoundingClientRect();
+    const pot=document.getElementById('pot').getBoundingClientRect();
+    const cx=pot.left+pot.width/2, by=pot.top+sy+pot.height*(93/240);
+    const Wc=Math.min(st.width/2,desk?440:vw/2)*.86/.75;
+    const top=st.top+sy+30, bottom=pot.top+sy-110, n=4, h=(bottom-top)/n;
+    const last=pts[pts.length-1];
+    d+=` C${last.x},${last.y+(top-last.y)*.6} ${cx-Wc*.6},${top} ${cx},${top}`;
+    let y=top, side=1;
+    for(let i=0;i<n;i++){d+=` C${cx+side*Wc},${y} ${cx+side*Wc},${y+h} ${cx},${y+h}`;y+=h;side=-side;}
+    d+=` C${cx+side*Wc*.5},${y} ${cx},${by-(by-y)*.5} ${cx},${by}`;
+    beats.push({x:cx,y:top+h,t:'5 · S-bends (the poster)'},{x:cx+Wc*.5,y:(y+by)/2,t:'6 · falls in the pot'});
+
+    strands.forEach(p=>p.setAttribute('d',d));
+    total=body.getTotalLength();
+    const N=Math.ceil(total/4); lens=new Float32Array(N+1); ys=new Float32Array(N+1);
+    for(let i=0,m=-1e9;i<=N;i++){const L=total*i/N;m=Math.max(m,body.getPointAtLength(L).y);lens[i]=L;ys[i]=m;}
+
+    const H=by+120;
+    svg.setAttribute('width',vw); svg.setAttribute('height',H); layer.style.height=H+'px';
+    const dash=`${total} ${total+50}`;
+    shadow.style.strokeWidth=W+7; shadow.setAttribute('transform','translate(5 8)');
+    outline.style.strokeWidth=W+7; body.style.strokeWidth=W;
+    shine.style.strokeWidth=W*.24; shine.setAttribute('transform',`translate(${-W*.17} ${-W*.2})`);
+    strands.forEach(p=>p.style.strokeDasharray=dash);
+
+    layer.querySelectorAll('.beat').forEach(b=>b.remove());
+    beats.forEach(b=>{const e=document.createElement('div');e.className='beat';e.textContent=b.t;
+      e.style.left=b.x+'px';e.style.top=b.y+'px';layer.appendChild(e);});
+
+    mouthY=by;
+  }
+
+  function lenAtY(t){let lo=0,hi=ys.length-1;if(t>=ys[hi])return total;
+    while(lo<hi){const mid=(lo+hi)>>1;ys[mid]<t?lo=mid+1:hi=mid;}return lens[lo];}
+  function render(){const off=total-state.len;strands.forEach(p=>p.style.strokeDashoffset=off);}
+
+  build();
+  if(reduce||!window.gsap){state.len=total;render();return;}
+
+  gsap.registerPlugin(ScrollTrigger);
+  const toLen=gsap.quickTo(state,'len',{duration:.55,ease:'power3.out',onUpdate:render});
+  const target=()=>Math.max(lenAtY(scrollY+innerHeight*READ),headLen+40);
+  // intro: the noodle writes itself over the headline, then scroll takes over
+  gsap.fromTo(state,{len:0},{len:()=>target(),duration:2.2,ease:'power2.inOut',delay:.3,onUpdate:render,
+    onComplete:()=>{introDone=true;toLen(target());}});
+  ScrollTrigger.create({start:0,end:'max',onUpdate:()=>{if(introDone)toLen(target());}});
+
+  // pot landing: scrubbed over the 40vh after the tip reaches the mouth
+  const tl=gsap.timeline({scrollTrigger:{
+    start:()=>mouthY-innerHeight*READ, end:()=>mouthY-innerHeight*(READ-.4), scrub:.6}});
+  tl.fromTo('#pot svg',{scaleY:.84,scaleX:1.1,transformOrigin:'50% 100%'},{scaleY:1,scaleX:1,duration:.3,ease:'back.out(3)'},0)
+    .from('#pile',{scale:0,svgOrigin:'160 110',duration:.35},0)
+    .from('#huruk',{scale:0,rotation:-40,opacity:0,duration:.25,ease:'back.out(2)'},.05);
+  document.querySelectorAll('#pot .tp').forEach((g,i)=>{const[x,y,r]=g.dataset.from.split(',').map(Number);
+    tl.from(g,{x,y,rotation:r,opacity:0,duration:.35,ease:'power2.out'},.15+i*.08);});
+  tl.from('#sticks',{x:150,y:-170,rotation:18,opacity:0,svgOrigin:'250 60',duration:.3},.55)
+    .fromTo('#steam path',{strokeDasharray:60,strokeDashoffset:60},{strokeDashoffset:0,duration:.3,stagger:.06},.7)
+    .from('#spark path',{scale:0,transformOrigin:'50% 50%',duration:.2,stagger:.05},.75)
+    .from('#price',{scale:0,rotation:70,opacity:0,duration:.25,ease:'back.out(2)'},.8);
+
+  let lastW=innerWidth,tid;
+  addEventListener('resize',()=>{if(innerWidth===lastW)return;lastW=innerWidth;clearTimeout(tid);
+    tid=setTimeout(()=>{build();ScrollTrigger.refresh();toLen(target());},200);});
+  document.fonts&&document.fonts.ready.then(()=>{build();ScrollTrigger.refresh();if(introDone){state.len=target();render();}});
+})();
+</script>
+</body>
+</html>

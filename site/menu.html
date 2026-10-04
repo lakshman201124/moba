@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MOBA - Menu</title>
+<script>try{if(sessionStorage.getItem('mobaBubble')==='1')document.documentElement.classList.add('bubble-cover')}catch(e){}</script>
+<style>html.bubble-cover::before{content:"";position:fixed;inset:0;z-index:9998;background:#F6F396}</style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bagel+Fat+One&family=Jua&display=swap" rel="stylesheet">
+<style>
+/* PLACEHOLDER menu page: exists so the bubble transition has somewhere to land.
+   The real category page is the next design task. */
+:root{--orange:#FF531B;--lemon:#F6F396;--sky:#8BBEE9;--blue:#3069B8;--ink:#1B1A2E;--cream:#FFF8E7;--pink:#FFDAEF;--sun:#FED602}
+*{box-sizing:border-box}
+body{margin:0;background:var(--cream);color:var(--ink);font:17px/1.5 "Jua",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+.wrap{max-width:440px;margin:0 auto;padding:0 18px}
+.topbar{position:sticky;top:0;z-index:5;background:var(--cream);border-bottom:3px solid var(--blue)}
+.topbar .row{display:flex;align-items:center;justify-content:space-between;height:70px}
+.logo{display:block;height:58px}.logo img{height:100%;width:auto}
+.pill{display:inline-flex;align-items:center;gap:8px;border:3px solid var(--blue);background:var(--orange);color:var(--ink);border-radius:999px;
+  padding:10px 16px;font:400 14px/1 "Bagel Fat One",sans-serif;text-transform:uppercase;text-decoration:none;box-shadow:4px 4px 0 var(--blue)}
+.pill.ghost{background:var(--cream);color:var(--blue)}
+.hero{background:var(--orange);padding:44px 0 56px;text-align:center}
+h1{font:400 clamp(70px,22vw,140px)/.84 "Bagel Fat One",sans-serif;text-transform:uppercase;margin:0;color:var(--cream);
+  -webkit-text-stroke:3px var(--blue);paint-order:stroke fill;text-shadow:0 5px 0 var(--blue),3px 5px 0 var(--blue)}
+.hang{display:inline-block;margin-top:14px;font:400 22px/1 "Bagel Fat One",sans-serif;padding:7px 14px 5px;border:3px solid var(--blue);border-radius:12px;
+  background:var(--sky);color:var(--ink);transform:rotate(-4deg);box-shadow:3px 3px 0 var(--blue)}
+.soon{padding:40px 0 70px;text-align:center}
+.soon p{max-width:30ch;margin:0 auto 24px;font-size:18px}
+.chips{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-bottom:34px}
+.chip{border:2.5px solid var(--blue);border-radius:999px;padding:6px 14px;font-size:15px;background:var(--lemon)}
+.chip:nth-child(3n+2){background:var(--pink)} .chip:nth-child(3n){background:var(--sky)}
+@media (min-width:760px){.wrap{max-width:900px;padding:0 40px}}
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="wrap row">
+    <a class="logo" data-bubble href="home.html" aria-label="MOBA home"><img src="assets/logo-mark.webp" width="420" height="432" alt=""></a>
+    <a class="pill ghost" data-bubble href="home.html">← Home</a>
+  </div>
+</header>
+<section class="hero">
+  <div class="wrap">
+    <h1>The menu</h1>
+    <span class="hang">메뉴</span>
+  </div>
+</section>
+<section class="soon">
+  <div class="wrap">
+    <p>Placeholder page. The category grid and dish bottom sheet are designed next.</p>
+    <div class="chips">
+      <span class="chip">Moba Signatures</span><span class="chip">Rameyon</span><span class="chip">Gimbap &amp; Toppoki</span>
+      <span class="chip">Korean Starters</span><span class="chip">Crispy Bites</span><span class="chip">Street Snacks</span>
+      <span class="chip">Korean Mandu</span><span class="chip">K-Rice &amp; Noodle</span><span class="chip">Toast, Melts &amp; Burgers</span>
+      <span class="chip">Salads &amp; Soups</span><span class="chip">Boba Bar</span><span class="chip">K-Desserts</span>
+    </div>
+    <a class="pill" data-bubble href="home.html">Back to home</a>
+  </div>
+</section>
+<script src="bubble-transition.js"></script>
+</body>
+</html>

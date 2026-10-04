@@ -1,0 +1,142 @@
+[
+  {
+    "title": "Mr. Spring & Mrs. Fresh - 'Gather 'round, it's family time!'",
+    "pageUrl": "https://mrspringmrsfresh.com",
+    "imageUrl": "https://assets.awwwards.com/awards/submissions/2026/05/6a0204ddcf3cd685226822.jpg",
+    "steal": "Vietnamese family restaurant whose hero headline literally says 'Gather 'round, it's family time!' over a playful illustration system (Awwwards nominee). Steal the verbal + visual 'family around the table' framing and the Dine / Enjoy / Share / Remember copy rhythm for the opening.",
+    "tag": "gather-scene"
+  },
+  {
+    "title": "MEET AT TABLE - Shared Stories (Behance)",
+    "pageUrl": "https://www.behance.net/gallery/252908069/MEET-AT-TABLE-Shared-Stories",
+    "imageUrl": "https://mir-s3-cdn-cf.behance.net/project_modules/1400/02f4c8252908069.6a602bfbc1cca.png",
+    "steal": "Collaborative illustration series about the joy of gathering around food. Cover: a crowded table spread of dishes inside a bright yellow oval on a flat background, bold outlines in purple/orange - a ready-made 'everything piles onto one table' key visual in a yellow + outline palette close to MOBA.",
+    "tag": "gather-scene"
+  },
+  {
+    "title": "Illustrations for Resy - dinner table scene (Behance)",
+    "pageUrl": "https://www.behance.net/gallery/255222027/Illustrations-for-Resy",
+    "imageUrl": "https://mir-s3-cdn-cf.behance.net/project_modules/1400/fbfdce255222027.6a99bf3271846.png",
+    "steal": "Chunky flat illustration of a full table of diners with waiters leaning in (wine pour, cake arriving, hands and plates converging). Steal the 'everyone converging on the middle' composition and the inclusion of arms entering the frame from the edges.",
+    "tag": "gather-scene"
+  },
+  {
+    "title": "Interactive Hungry Bear (CodePen, Ma5a)",
+    "pageUrl": "https://codepen.io/Ma5a/pen/ogNKRzd",
+    "imageUrl": "https://shots.codepen.io/username/pen/ogNKRzd-800.jpg?version=1753104012",
+    "steal": "Drag a donut to a bear's mouth to feed him; sparkle and crumb effects on each bite, built from CSS border-image. Direct template for a 'feed the MOBA bear' mini-game or loading interaction. NOTE: image host blocks curl (403) but loads in a browser; if hotlink fails, screenshot the pen.",
+    "tag": "mascot-interaction"
+  },
+  {
+    "title": "Sunbeam Bagels & Coffee - 'Drop a Bagel. Or 20'",
+    "pageUrl": "https://sunbeambagels.com/",
+    "imageUrl": "https://assets.awwwards.com/awards/submissions/2026/07/6a4d451f59f62411368944.jpg",
+    "steal": "Tap/click to drop bagels that pile up on the page (physics-style), 'Listen for Mmms' hidden food sounds and micro-animations ('Because boring is boring'). Steal tap-to-spawn food that stacks around the menu and a food-sound easter egg.",
+    "tag": "game"
+  },
+  {
+    "title": "Brets - crisp brand turned into a mini-game hub",
+    "pageUrl": "https://www.brets.fr/fr",
+    "imageUrl": "https://assets.awwwards.com/awards/submissions/2026/04/69e78b71cba05584274050.jpg",
+    "steal": "Snack brand site with an 'Aperitif / PLAY' section: ping-pong with your favourite flavour, a 'crunch all the chips to save the aperitif' game, a flavour vote with live percentages and a build-your-own-pack lab. Steal the snack-sized games and the vote-for-your-favourite-dish idea.",
+    "tag": "game"
+  },
+  {
+    "title": "Cozy Eating Village - pixel cooking game",
+    "pageUrl": "https://www.cozyeating.app/",
+    "imageUrl": "https://assets.awwwards.com/awards/submissions/2026/08/6a93430fa6079081119421.png",
+    "steal": "Walk a tiny village (WASD / click-to-move), interact with hens, fruit trees and a cow to collect ingredients, unlock recipes in a binder. Steal the collect-ingredients-then-unlock-dishes loop as a menu: each ingredient the player collects reveals a menu item.",
+    "tag": "game"
+  },
+  {
+    "title": "Crav Burgers - playful burger ordering concept (Awwwards SOTD)",
+    "pageUrl": "https://www.cravburgers.shop/",
+    "imageUrl": "https://assets.awwwards.com/awards/submissions/2026/05/6a00d541e649b454878886.png",
+    "steal": "Loader reads 'PREPARING ARTISAN KITCHEN...' then a scroll story where burger layers stack ('Every layer, packed with signature flavor'), with big stacked-type nav. Steal a themed loading line and scroll-driven stacking of ingredients.",
+    "tag": "splash-intro"
+  },
+  {
+    "title": "Mr.Day - arcade-style loader 'LET'S PLAY' (snack brand)",
+    "pageUrl": "https://mrday.it/",
+    "imageUrl": "https://assets.awwwards.com/awards/submissions/2026/06/6a3a42cfe3441238181530.png",
+    "steal": "Percentage loader (00%) resolves into a repeated 'LET'S PLAY' marquee, then category sections (muffin, brownies, donuts) in video-game language ('Level up your snack break', 'Level 40 unlocked'). Steal the loader-to-'Let's play' handoff and gamified category labels.",
+    "tag": "splash-intro"
+  },
+  {
+    "title": "Banh Mi Viet Nam - interactive street-food story",
+    "pageUrl": "https://banhmivietnam.xyz/",
+    "imageUrl": "https://assets.awwwards.com/awards/submissions/2026/06/6a2c33b73c062972358132.png",
+    "steal": "Scroll story with an 'Anatomy' section that breaks the sandwich into labelled ingredients (baguette, pate, pickled daikon, chilli...) and a fillings/types picker, plus giant crunchy type. Steal the exploded-ingredients scroll to introduce a signature dish.",
+    "tag": "scroll-story"
+  },
+  {
+    "title": "McDonald's x Kerwin Frost - McNugget Buddies hub (IGN)",
+    "pageUrl": "https://www.ign.com/special/mcdonalds/",
+    "imageUrl": "https://assets.awwwards.com/awards/submissions/2026/01/6965299663766340456984.jpg",
+    "steal": "Mascot-led microsite: ENTER gate, flip cards for each Buddy with bios, 'Select one below' character picker and a 'pick me' personality-to-playlist step. Steal the ENTER button gate and a pick-your-bear character select that sets a theme or recommends dishes.",
+    "tag": "mascot-interaction"
+  },
+  {
+    "title": "Bibim-bop! Korean Restaurant Branding (Behance)",
+    "pageUrl": "https://www.behance.net/gallery/217327287/Bibim-Bop-Korean-Restaurant-Branding",
+    "imageUrl": "https://mir-s3-cdn-cf.behance.net/project_modules/1400/73cc29217327287.678f19a546f47.png",
+    "steal": "Korean restaurant identity: orange-red pill logo with two cartoon mascot faces peeking in from either side, chopsticks and dishes behind. Steal the twin-mascot-flanking-the-logo lockup for the View Menu moment.",
+    "tag": "mascot-interaction"
+  },
+  {
+    "title": "Korean Tiger - Korean Cafe Branding & Mascot (Behance)",
+    "pageUrl": "https://www.behance.net/gallery/256443173/Korean-Tiger-Korean-Cafe-Branding-Mascot-Design",
+    "imageUrl": "https://mir-s3-cdn-cf.behance.net/project_modules/1400/5daa8f256443173.6abe981f8ee93.jpg",
+    "steal": "Korean cafe whose tiger mascot sits in a stamp-like badge over a loud zebra-stripe pattern, with bowl illustrations below. Steal the loud pattern backdrop behind a mascot badge and the stamp framing.",
+    "tag": "other"
+  },
+  {
+    "title": "Illustrations with Hands (Behance)",
+    "pageUrl": "https://www.behance.net/gallery/253331905/Ilustrations-with-Hands",
+    "imageUrl": "https://mir-s3-cdn-cf.behance.net/project_modules/1400/5b71f1253331905.6a6686590dfb8.jpg",
+    "steal": "Top-down flat hands of different skin tones working on a table in saturated colour blocks (craft subject, not food). Steal the cropped overhead hands style; swap in chopsticks, spoons and dishes for the converging-hands intro.",
+    "tag": "gather-scene"
+  },
+  {
+    "title": "Domino's Pizza Legends - drag-your-own-pizza creator",
+    "pageUrl": "http://www.pizzalegends.co.uk/",
+    "imageUrl": "https://assets.awwwards.com/awards/submissions/2015/10/562129b07ddfe.jpeg",
+    "steal": "Classic 'build it yourself' food interaction: choose base and toppings to assemble a custom pizza. Old (2015) and the live site may be offline, so use as a mechanic reference only: drag toppings onto the dish.",
+    "tag": "game"
+  },
+  {
+    "title": "Johnny's Dirty Soda - bold animated snack site",
+    "pageUrl": "https://www.johnnysdirtysoda.com/",
+    "imageUrl": "https://assets.awwwards.com/awards/submissions/2026/02/69936105144f7188216255.png",
+    "steal": "Colourful animated site with numbered rolling counters ('Snack fix', 'Flavor trip', 'Flavor shop'). Steal the oversized stacked-number section labels and the playful counter motif for menu categories.",
+    "tag": "other"
+  },
+  {
+    "title": "Voldog Food - motion-driven playful shop with quiz selector",
+    "pageUrl": "https://www.voldogfood.com/",
+    "imageUrl": "https://assets.awwwards.com/awards/submissions/2026/05/6a144998748f6961750127.png",
+    "steal": "Hero is a mini quiz (age, weight, activity level, neutered yes/no) that returns recommended meals. Steal the tap-chip quiz that ends in recommended dishes ('How hungry are you? Spicy or mild? Sharing?').",
+    "tag": "scroll-story"
+  },
+  {
+    "title": "Meatopia - illustrated 3D interactive map (Awwwards honorable mention)",
+    "pageUrl": "https://visitmeatopia.com/kretschmar-crafthouse/recipes/bologna-grilled-cheese-sandwich",
+    "imageUrl": "https://assets.awwwards.com/awards/submissions/2026/08/6a70d06556038092218112.png",
+    "steal": "Three.js illustrated world you explore, with each location leading to recipes. Steal the idea of a tiny illustrated MOBA 'town' where each building or table opens a menu section.",
+    "tag": "scroll-story"
+  },
+  {
+    "title": "OREO x BTS - Love Letter site",
+    "pageUrl": "https://us.oreobts.com/letter",
+    "imageUrl": "https://assets.awwwards.com/awards/submissions/2026/07/6a58b92d38f84724797814.jpg",
+    "steal": "Fans create and share a personalised digital love letter, a snack brand turning a pick-and-personalise flow into a shareable moment. Steal the 'personalise then share' step, e.g. name your table and share a gather card.",
+    "tag": "other"
+  },
+  {
+    "title": "Tab Kitchen - Bangalore cafe kitchen (Awwwards)",
+    "pageUrl": "https://tabkitchenbakery.com/",
+    "imageUrl": "https://assets.awwwards.com/awards/submissions/2026/02/698f16314b23f538099268.png",
+    "steal": "Indian cafe-kitchen site (JP Nagar, Bangalore) recognised by Awwwards; a local-context reference for how a cafe brand carries warmth and charm online. Not reviewed in depth, so use as a market reference.",
+    "tag": "other"
+  }
+]
