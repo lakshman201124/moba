@@ -1,65 +1,311 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>MOBA - Menu</title>
-<script>try{if(sessionStorage.getItem('mobaBubble')==='1')document.documentElement.classList.add('bubble-cover')}catch(e){}</script>
-<style>html.bubble-cover::before{content:"";position:fixed;inset:0;z-index:9998;background:#F6F396}</style>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bagel+Fat+One&family=Jua&display=swap" rel="stylesheet">
-<style>
-/* PLACEHOLDER menu page: exists so the bubble transition has somewhere to land.
-   The real category page is the next design task. */
-:root{--orange:#FF531B;--lemon:#F6F396;--sky:#8BBEE9;--blue:#3069B8;--ink:#1B1A2E;--cream:#FFF8E7;--pink:#FFDAEF;--sun:#FED602}
-*{box-sizing:border-box}
-body{margin:0;background:var(--cream);color:var(--ink);font:17px/1.5 "Jua",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
-.wrap{max-width:440px;margin:0 auto;padding:0 18px}
-.topbar{position:sticky;top:0;z-index:5;background:var(--cream);border-bottom:3px solid var(--blue)}
-.topbar .row{display:flex;align-items:center;justify-content:space-between;height:70px}
-.logo{display:block;height:58px}.logo img{height:100%;width:auto}
-.pill{display:inline-flex;align-items:center;gap:8px;border:3px solid var(--blue);background:var(--orange);color:var(--ink);border-radius:999px;
-  padding:10px 16px;font:400 14px/1 "Bagel Fat One",sans-serif;text-transform:uppercase;text-decoration:none;box-shadow:4px 4px 0 var(--blue)}
-.pill.ghost{background:var(--cream);color:var(--blue)}
-.hero{background:var(--orange);padding:44px 0 56px;text-align:center}
-h1{font:400 clamp(70px,22vw,140px)/.84 "Bagel Fat One",sans-serif;text-transform:uppercase;margin:0;color:var(--cream);
-  -webkit-text-stroke:3px var(--blue);paint-order:stroke fill;text-shadow:0 5px 0 var(--blue),3px 5px 0 var(--blue)}
-.hang{display:inline-block;margin-top:14px;font:400 22px/1 "Bagel Fat One",sans-serif;padding:7px 14px 5px;border:3px solid var(--blue);border-radius:12px;
-  background:var(--sky);color:var(--ink);transform:rotate(-4deg);box-shadow:3px 3px 0 var(--blue)}
-.soon{padding:40px 0 70px;text-align:center}
-.soon p{max-width:30ch;margin:0 auto 24px;font-size:18px}
-.chips{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-bottom:34px}
-.chip{border:2.5px solid var(--blue);border-radius:999px;padding:6px 14px;font-size:15px;background:var(--lemon)}
-.chip:nth-child(3n+2){background:var(--pink)} .chip:nth-child(3n){background:var(--sky)}
-@media (min-width:760px){.wrap{max-width:900px;padding:0 40px}}
-</style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#3069B8">
+  <title>Menu · MOBA 모바 Korean Resto-Cafe</title>
+  <meta name="description" content="The full MOBA menu: rabokki, rameyon, gimbap, toppoki, Korean fried chicken, mandu, corn doggs, boba and K-desserts.">
+  <script>try{if(sessionStorage.getItem('mobaBubble')==='1')document.documentElement.classList.add('bubble-cover')}catch(e){}</script>
+  <style>html.bubble-cover::before{content:"";position:fixed;inset:0;z-index:9998;background:#F6F396}</style>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bagel+Fat+One&family=Jua&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="menu.css?v=5">
 </head>
 <body>
-<header class="topbar">
-  <div class="wrap row">
-    <a class="logo" data-bubble href="home.html" aria-label="MOBA home"><img src="assets/logo-mark.webp" width="420" height="432" alt=""></a>
-    <a class="pill ghost" data-bubble href="home.html">← Home</a>
+
+  <!-- Line art. Food drawings are cloned inline by menu.js so their parts can be styled. -->
+  <svg class="defs" width="0" height="0" aria-hidden="true">
+    <defs>
+      <!-- painted brush stroke behind featured prices -->
+      <path id="brush" d="M7 15C25 6 72 3 119 8c6 1 9 6 7 12-1 6 3 12-3 18-30 7-82 10-113 5-6-1-8-7-6-12 1-5-1-12 3-16z M2 39c9 3 17 4 25 3 M104 5c6-1 12 0 16 2" />
+
+      <!-- rabokki: the yellow ramyeon pot, noodles and tteok -->
+      <symbol id="art-pot" viewBox="0 0 120 120">
+        <g class="steam"><path d="M42 30c-5-6 4-10-1-17" /><path d="M60 26c-6-7 5-12-1-20" /><path d="M78 30c-5-6 4-10-1-16" /></g>
+        <path d="M17 58c-11-1-11 12 0 11M103 58c11-1 11 12 0 11" />
+        <path class="o" d="M17 50h86v32c0 11-9 20-20 20H37c-11 0-20-9-20-20z" />
+        <path d="M17 66c18 5 68 5 86 0" />
+        <path class="o" d="M70 34l15 6c3 1 2 6-1 6l-15-6c-3-1-2-6 1-6z" />
+        <path class="o" d="M36 38l14-4c3-1 5 4 2 5l-14 4c-3 1-5-4-2-5z" />
+        <path d="M26 50c4-7 8 4 12-3s8 4 12-3 8 4 12-3 8 4 12-3 8 4 12-3 8 4 10 0" />
+        <path class="o" d="M13 50c0-5 94-5 94 0s-94 5-94 0z" />
+        <path d="M44 84h.1M60 88h.1M76 84h.1" />
+      </symbol>
+
+      <symbol id="art-soup" viewBox="0 0 120 120">
+        <g class="steam"><path d="M44 40c-6-7 4-11-1-19" /><path d="M60 36c-7-8 5-13-1-22" /><path d="M76 40c-5-6 4-10 0-17" /></g>
+        <path class="o" d="M13 57c2-8 92-8 94 0 3 30-20 43-47 43S10 87 13 57z" />
+        <path d="M13 57c2-8 92-8 94 0-1 8-92 9-94 0z" />
+        <path d="M14 60c3 26 22 40 46 40s43-14 46-40" />
+        <path d="M45 99l2 7h26l2-7" />
+        <path d="M30 76c4 3 8 3 12 0s8-3 12 0 8 3 12 0 8-3 12 0 8 3 12 0" />
+        <path d="M34 57c2-2 5-2 7 0M50 59c2-2 5-2 7 0M66 58c2-2 4-2 6 0" />
+        <path class="o" d="M82 58c1-5 12-6 14 0-3 4-11 4-14 0z" />
+        <path d="M90 55l13-27c2-4 7-2 6 2l-10 25" />
+      </symbol>
+
+      <symbol id="art-wok" viewBox="0 0 120 120">
+        <g class="steam"><path d="M30 34c-3-5-2-10 2-13" /><path d="M92 30c4-4 5-8 3-13" /></g>
+        <path d="M38 40l7-4 4 7-7 4z" />
+        <path d="M58 22c5-3 10 2 6 6s-10 0-6-6z" />
+        <path d="M78 36l6 1-1 6-6-1z" />
+        <path d="M48 50c6-5 12-4 17-11" />
+        <path d="M70 50h.1M42 54h.1M88 48h.1M60 44h.1" />
+        <path class="o" d="M12 62h86c-2 22-22 32-42 32S14 84 12 62z" />
+        <path d="M98 62l18-9" />
+        <path d="M30 76c10 4 40 4 52 0" />
+        <g class="flame"><path d="M42 112c-6-4-5-11 0-16 1 4 4 4 4 8 1-2 2-3 2-5 4 4 4 11-1 13z" /><path d="M58 113c-6-4-5-12 1-18 1 4 4 5 4 9 1-2 2-4 2-6 4 5 4 13-2 15z" /><path d="M75 112c-6-4-5-11 0-16 1 4 4 4 4 8 1-2 2-3 2-5 4 4 4 11-1 13z" /></g>
+      </symbol>
+
+      <!-- crispy bites: a sesame-flecked drumstick -->
+      <symbol id="art-chicken" viewBox="0 0 120 120">
+        <path class="o" d="M30 84c-7-5-16 1-12 8-7 2-5 13 3 11 2 7 13 5 11-2 7-2 6-12-2-17z" />
+        <path class="o" d="M33 89l20-20 8 8-20 20z" />
+        <path class="o" d="M52 72c-14-14-8-42 14-50 20-7 40 7 38 28-2 20-22 34-42 31z" />
+        <path d="M66 34c7-3 15-1 20 5M62 46c5-2 10-1 13 2" />
+        <path d="M84 56h.1M76 64h.1M94 46h.1M66 58h.1" />
+        <g class="steam"><path d="M96 20c-4-5 3-8 0-13" /><path d="M108 30c-3-4 3-7 0-11" /></g>
+      </symbol>
+
+      <!-- street snacks: corn dogg with a mustard zigzag -->
+      <symbol id="art-corndog" viewBox="0 0 120 120">
+        <path d="M57 86v28M63 86v28" />
+        <path class="o" d="M44 30c0-18 32-18 32 0v42c0 18-32 18-32 0z" />
+        <path d="M46 34l28 8-28 8 28 8-28 8 28 8" />
+        <path d="M54 22h.1M66 24h.1M58 80h.1M68 76h.1M50 76h.1" />
+        <path class="o" d="M82 92c0-6 24-6 24 0 0 10-5 14-12 14s-12-4-12-14z" />
+        <path d="M82 92c0 4 24 4 24 0" />
+      </symbol>
+
+      <!-- mandu: bamboo steamer of dumplings -->
+      <symbol id="art-dimsum" viewBox="0 0 120 120">
+        <g class="steam"><path d="M40 30c-5-5 3-9-1-15" /><path d="M80 32c-5-5 3-9-1-15" /></g>
+        <path class="o" d="M24 57c-1-14 20-18 26-4" /><path d="M30 48l3 6M37 45l1 7M44 46l-1 7" />
+        <path class="o" d="M70 55c4-14 26-10 26 3" /><path d="M76 47l2 6M83 45v7M90 48l-2 6" />
+        <path class="o" d="M45 54c0-17 27-19 29 0" /><path d="M52 41l3 7M59 38v8M66 41l-2 7" />
+        <path class="o" d="M12 58c1-8 95-9 96 0l-2 32c-4 9-88 9-92 0z" />
+        <path d="M12 58c1 8 95 8 96 0" />
+        <path d="M13 72c18 7 76 7 94 0" />
+        <path d="M28 77v14M46 79v15M64 79v15M82 78v14M97 75v12" />
+      </symbol>
+
+      <!-- gimbap: three rounds and chopsticks -->
+      <symbol id="art-gimbap" viewBox="0 0 120 120">
+        <path d="M70 6L44 50M80 10L50 52" />
+        <path class="o" d="M42 62a18 18 0 1 0 36 0a18 18 0 1 0-36 0" />
+        <path d="M48 62a12 12 0 1 0 24 0a12 12 0 1 0-24 0" />
+        <path d="M55 58l5-3 5 3M56 66h8M60 60v6" />
+        <path class="o" d="M14 82a18 18 0 1 0 36 0a18 18 0 1 0-36 0" />
+        <path d="M20 82a12 12 0 1 0 24 0a12 12 0 1 0-24 0" />
+        <path d="M27 78l5-3 5 3M28 86h8M32 80v6" />
+        <path class="o" d="M70 82a18 18 0 1 0 36 0a18 18 0 1 0-36 0" />
+        <path d="M76 82a12 12 0 1 0 24 0a12 12 0 1 0-24 0" />
+        <path d="M83 78l5-3 5 3M84 86h8M88 80v6" />
+      </symbol>
+
+      <symbol id="art-noodles" viewBox="0 0 120 120">
+        <path d="M64 41c-4 6 4 10 0 19M69 42c-4 6 4 10 0 18M74 42c-4 6 4 10 0 17" />
+        <path d="M104 6L66 40M112 14L72 42" />
+        <path class="o" d="M10 62c1-8 99-9 100 0 0 28-24 42-50 42S10 90 10 62z" />
+        <path d="M10 62c1 8 99 8 100 0" />
+        <path d="M11 64c3 26 25 40 49 40s46-14 49-40" />
+        <path d="M44 103l2 7h28l2-7" />
+        <path d="M24 82l6-4 6 4 6-4 6 4 6-4 6 4 6-4 6 4 6-4 6 4 6-4 6 4" />
+        <path d="M22 61c0-8 16-8 16 0M27 60c0-3 6-3 6 0" />
+        <path d="M42 63c4-3 8 3 12 0M84 60l4-3M90 61l3-3" />
+      </symbol>
+
+      <symbol id="art-rice" viewBox="0 0 120 120">
+        <path d="M64 44L86 6M70 46L98 12" />
+        <path class="o" d="M30 48c4-13 54-13 60 0z" />
+        <path d="M44 42l3-1M56 39h3M66 41l3 1M50 46l3-1M74 45l2 1M38 46l2-1" />
+        <path class="o" d="M28 48L17 33l33 7M92 48l11-15-33 7" />
+        <path class="o" d="M28 48h64l-9 56H37z" />
+        <path d="M50 76a10 10 0 1 0 20 0a10 10 0 1 0-20 0" />
+        <path d="M60 82c-4-3-3-8 0-11 0 3 3 3 3 6s-1 4-3 5z" />
+      </symbol>
+
+      <!-- toast, melts & burgers -->
+      <symbol id="art-burger" viewBox="0 0 120 120">
+        <path class="o" d="M18 58c0-28 84-28 84 0z" />
+        <path d="M42 40l3-1M58 34h3M74 39l3 1M50 48l3-1M66 47l3 1" />
+        <path d="M14 63c7-6 13 5 20 0s13 5 20 0 13 5 20 0 13 5 20 0 13 5 12 0" />
+        <path class="o" d="M16 66h88a7 7 0 0 1 0 14H16a7 7 0 0 1 0-14z" />
+        <path class="o" d="M62 66h22l-6 12-5-6-5 8z" />
+        <path class="o" d="M20 84h80c0 12-10 18-40 18S20 96 20 84z" />
+      </symbol>
+
+      <!-- boba: dome-lid cup, fat straw, pearls -->
+      <symbol id="art-boba" viewBox="0 0 120 120">
+        <path class="o" d="M58 2l9 2-8 38-9-2z" />
+        <path class="o" d="M34 40c2-14 50-14 52 0z" />
+        <path class="o" d="M28 40h64v7H28z" />
+        <path class="o" d="M33 47h54l-7 61H40z" />
+        <path d="M35 62c12 5 38-5 50 0" />
+        <path class="o" d="M44 96a4.5 4.5 0 1 0 9 0a4.5 4.5 0 1 0-9 0M57 100a4.5 4.5 0 1 0 9 0a4.5 4.5 0 1 0-9 0M66 92a4.5 4.5 0 1 0 9 0a4.5 4.5 0 1 0-9 0M50 86a4.5 4.5 0 1 0 9 0a4.5 4.5 0 1 0-9 0" />
+        <path d="M98 22l2 6 6 2-6 2-2 6-2-6-6-2 6-2zM18 64l1.5 4 4 1.5-4 1.5-1.5 4-1.5-4-4-1.5 4-1.5z" />
+      </symbol>
+
+      <symbol id="art-sundae" viewBox="0 0 120 120">
+        <path class="o" d="M28 50L18 24l7-2 10 26" />
+        <path class="o" d="M30 54c-4-14 18-22 28-8 4 6 2 10 0 10" />
+        <path class="o" d="M58 50c-2-16 30-18 30 4" />
+        <path class="o" d="M42 46c-2-17 30-21 32-2" />
+        <path d="M66 26c2-8 8-14 14-16" />
+        <path class="o" d="M56 30a6 6 0 1 0 12 0a6 6 0 1 0-12 0" />
+        <path class="o" d="M22 56h76c-2 20-18 30-38 30S24 76 22 56z" />
+        <path d="M36 56c0 7 4 7 4 0M78 56c0 6 4 6 4 0" />
+        <path d="M32 66c10 4 46 4 56 0" />
+        <path d="M56 86v14M64 86v14" />
+        <path class="o" d="M40 106c2-6 38-6 40 0z" />
+      </symbol>
+
+      <!-- most loved: a heart-topped bowl -->
+      <symbol id="art-top" viewBox="0 0 120 120">
+        <path class="o" d="M60 50C46 36 26 34 28 18c2-10 16-12 22-4 2 3 6 3 10 8 4-5 8-5 10-8 6-8 20-6 22 4 2 16-18 18-32 32z" />
+        <path class="o" d="M12 62c1-8 95-9 96 0 0 26-22 40-48 40S12 88 12 62z" />
+        <path d="M12 62c1 8 95 8 96 0" />
+        <path d="M44 101l2 7h28l2-7" />
+        <path d="M100 26l2 6 6 2-6 2-2 6-2-6-6-2 6-2zM16 34l1.5 4 4 1.5-4 1.5-1.5 4-1.5-4-4-1.5 4-1.5z" />
+      </symbol>
+
+      <!-- UI icons, 24px grid -->
+      <symbol id="i-back" viewBox="0 0 24 24"><path d="M19 12H5M11 6l-6 6 6 6" /></symbol>
+      <symbol id="i-chev" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7" /></symbol>
+      <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" /></symbol>
+      <symbol id="i-minus" viewBox="0 0 24 24"><path d="M5 12h14" /></symbol>
+      <symbol id="i-close" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18" /></symbol>
+      <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6" /></symbol>
+      <symbol id="i-bag" viewBox="0 0 24 24"><path d="M5 8.5h14l-1.2 11.5H6.2z" /><path d="M9 8.5V7a3 3 0 0 1 6 0v1.5" /></symbol>
+      <symbol id="i-search" viewBox="0 0 24 24"><path d="M10.5 4.5a6 6 0 1 0 0 12a6 6 0 1 0 0-12M15 15l5 5" /></symbol>
+      <symbol id="i-bowl" viewBox="0 0 24 24"><path d="M3 12h18c0 4.5-4 7.5-9 7.5S3 16.5 3 12z" /><path d="M8.5 9c0-1.6 1.6-1.8 1.6-3.6M13.5 9c0-1.6 1.6-1.8 1.6-3.6" /></symbol>
+      <symbol id="i-leaf" viewBox="0 0 24 24"><path d="M5 19C5 10.5 10.5 5 19 5c0 8.5-5.5 14-14 14z" /><path d="M5 19l8-8" /></symbol>
+      <symbol id="i-chili" viewBox="0 0 24 24"><path d="M4.5 19.5c7.5 1 12.5-4 13.5-11-2.6-.4-4 1.2-4.8 3.4-1 3-3.8 5.6-8.7 7.6z" /><path d="M18 8.5c.2-2 1.2-3.3 2.6-3.6" /></symbol>
+      <symbol id="i-star" viewBox="0 0 24 24"><path d="M12 3.5l2.4 5.3 5.6.6-4.2 3.8 1.2 5.6L12 16l-5 2.8 1.2-5.6L4 9.4l5.6-.6z" /></symbol>
+    </defs>
+  </svg>
+
+  <div class="app" id="app">
+    <main>
+      <h1 class="sr-only">MOBA menu</h1>
+
+      <nav class="band" aria-label="Menu sections">
+        <div class="band__track" id="bandTrack">
+          <a class="band__home" href="index.html" data-bubble aria-label="MOBA home"><img src="assets/logo-mark.webp" width="420" height="432" alt=""></a>
+          <span class="band__pill" id="bandPill" aria-hidden="true"></span>
+        </div>
+      </nav>
+
+      <!-- Most loved: signatures as swipe cards, then every section -->
+      <section class="view view--top" id="topView" aria-labelledby="topTitle">
+        <div class="view__head">
+          <h2 class="view__title" id="topTitle"><span lang="ko">밥 먹었어?</span></h2>
+          <p class="view__sub">Have you eaten? Start with the plates everyone comes back for. Swipe, then tap <b>+</b> to build your order.</p>
+        </div>
+        <div class="rail" id="rail" role="list" aria-busy="true">
+          <p class="rail__status">Warming up the pot…</p>
+        </div>
+        <div class="rail-nav" aria-hidden="true">
+          <button class="round" type="button" id="railPrev" tabindex="-1"><svg class="ico"><use href="#i-back" /></svg></button>
+          <button class="round" type="button" id="railNext" tabindex="-1"><svg class="ico"><use href="#i-arrow" /></svg></button>
+        </div>
+        <div class="explore">
+          <h2 class="explore__title">The full menu <span lang="ko">메뉴</span></h2>
+          <div class="tiles" id="tiles"></div>
+        </div>
+      </section>
+
+      <!-- One section's dishes -->
+      <section class="view dishes" id="catView" aria-labelledby="catTitle" hidden>
+        <div class="dishes__head">
+          <h2 class="cat-title" id="catTitle">Menu</h2>
+          <p class="cat-ko" id="catKo" lang="ko"></p>
+          <p class="cat-blurb" id="catBlurb"></p>
+          <div class="tabs" id="tabs" role="group" aria-label="Filter dishes">
+            <span class="tabs__line" id="tabsLine" aria-hidden="true"></span>
+          </div>
+        </div>
+        <div class="grid" id="grid" aria-live="polite"></div>
+        <div class="extras" id="extras"></div>
+        <div class="notes" id="notes"></div>
+      </section>
+
+      <footer class="closing">
+        <p>Pick what you like, choose your add-ons, then place <button type="button" class="inline-link" data-open-list>your order</button> from the table.</p>
+        <ul class="legend" aria-label="Menu key">
+          <li><span class="mark mark--veg" aria-hidden="true"></span>Veg</li>
+          <li><span class="mark mark--nonveg" aria-hidden="true"></span>Non-veg</li>
+          <li><span class="mark mark--egg" aria-hidden="true"></span>Egg</li>
+        </ul>
+        <p class="closing__fine">All prices in INR. Taxes extra.</p>
+        <p class="closing__sign" lang="ko">맛있게 드세요!</p>
+      </footer>
+    </main>
   </div>
-</header>
-<section class="hero">
-  <div class="wrap">
-    <h1>The menu</h1>
-    <span class="hang">메뉴</span>
+
+  <nav class="dock" id="dock" aria-label="Menu actions">
+    <button class="dock__btn" type="button" id="searchBtn" aria-label="Search dishes"><svg class="ico"><use href="#i-search" /></svg></button>
+    <button class="dock__btn dock__veg" type="button" id="vegToggle" aria-pressed="false" aria-label="Veg only"><svg class="ico"><use href="#i-leaf" /></svg></button>
+    <button class="dock__pill" type="button" id="topBtn"><svg class="ico"><use href="#i-bowl" /></svg><span>Menu</span></button>
+    <button class="dock__btn dock__list" type="button" id="listBtn" data-open-list aria-label="Your order, empty">
+      <svg class="ico"><use href="#i-bag" /></svg>
+      <span class="badge" id="badge" hidden>0</span>
+    </button>
+  </nav>
+
+  <!-- dish detail -->
+  <div class="detail" id="detail" role="dialog" aria-modal="true" aria-labelledby="detailTitle" hidden>
+    <div class="detail__scrim" data-close></div>
+    <div class="detail__panel" id="detailPanel"></div>
   </div>
-</section>
-<section class="soon">
-  <div class="wrap">
-    <p>Placeholder page. The category grid and dish bottom sheet are designed next.</p>
-    <div class="chips">
-      <span class="chip">Moba Signatures</span><span class="chip">Rameyon</span><span class="chip">Gimbap &amp; Toppoki</span>
-      <span class="chip">Korean Starters</span><span class="chip">Crispy Bites</span><span class="chip">Street Snacks</span>
-      <span class="chip">Korean Mandu</span><span class="chip">K-Rice &amp; Noodle</span><span class="chip">Toast, Melts &amp; Burgers</span>
-      <span class="chip">Salads &amp; Soups</span><span class="chip">Boba Bar</span><span class="chip">K-Desserts</span>
+
+  <!-- your order: the cart, then the confirmation once it's placed -->
+  <div class="sheet" id="listSheet" role="dialog" aria-modal="true" aria-labelledby="listTitle" hidden>
+    <div class="sheet__scrim" data-close></div>
+    <div class="sheet__panel">
+      <header class="sheet__head">
+        <h2 class="sheet__title" id="listTitle">Your order</h2>
+        <button class="round" type="button" data-close aria-label="Close your order"><svg class="ico"><use href="#i-close" /></svg></button>
+      </header>
+      <p class="sheet__sub" id="listSub">Check your picks, add your table number, then place the order.</p>
+      <div class="sheet__body" id="listBody"></div>
+      <footer class="sheet__foot order-foot" id="listFoot">
+        <div class="order-foot__row">
+          <label class="field" for="tableInput">
+            <span class="field__label">Table no.</span>
+            <input class="field__input" id="tableInput" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="3" autocomplete="off" placeholder="12" aria-describedby="tableError">
+          </label>
+          <div class="total"><span id="totalCount">0 items</span><strong id="total">₹0</strong><small>Taxes extra</small></div>
+        </div>
+        <p class="field__error" id="tableError" role="alert" hidden></p>
+        <button class="cta cta--order" type="button" id="placeBtn">Place order</button>
+        <button class="text-btn" type="button" id="clearList">Clear order</button>
+      </footer>
     </div>
-    <a class="pill" data-bubble href="home.html">Back to home</a>
   </div>
-</section>
-<script src="bubble-transition.js"></script>
+
+  <!-- search -->
+  <div class="sheet sheet--search" id="searchSheet" role="dialog" aria-modal="true" aria-label="Search dishes" hidden>
+    <div class="sheet__scrim" data-close></div>
+    <div class="sheet__panel">
+      <header class="sheet__head">
+        <label class="search">
+          <svg class="ico" aria-hidden="true"><use href="#i-search" /></svg>
+          <input id="searchInput" type="search" placeholder="Rabokki, ube, corn dogg…" autocomplete="off" enterkeyhint="search" aria-label="Search dishes">
+        </label>
+        <button class="round" type="button" data-close aria-label="Close search"><svg class="ico"><use href="#i-close" /></svg></button>
+      </header>
+      <div class="sheet__body" id="searchBody"></div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script src="menu-data.js?v=3"></script>
+  <script src="menu.js?v=3"></script>
+  <script src="bubble-transition.js"></script>
 </body>
 </html>
