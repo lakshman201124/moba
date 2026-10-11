@@ -1,0 +1,26 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "cream-palette",
+        "value": "*",
+        "files": [
+          "site/menu.html"
+        ],
+        "createdAt": "2026-10-08T07:23:18.566Z",
+        "reason": "Brand palette: cream #FFF8E7 is the locked page surface in visual-direction.md section 2 and on the home page (site/index.html)"
+      },
+      {
+        "rule": "dark-glow",
+        "value": "*",
+        "files": [
+          "site/menu.html"
+        ],
+        "createdAt": "2026-10-08T07:23:18.605Z",
+        "reason": "False positive: the only zero-offset shadows are hard, unblurred selection/focus rings (.add.is-in, .search:focus-within), not glows"
+      }
+    ]
+  }
+}

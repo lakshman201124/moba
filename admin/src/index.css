@@ -1,0 +1,190 @@
+@import "tailwindcss";
+
+@theme {
+  --color-cream: #FFF8E7;
+  --color-paper: #FFFDF6;
+  --color-ink: #1B1A2E;
+  --color-cobalt: #3069B8;
+  --color-orange: #FF531B;
+  --color-lemon: #F6F396;
+  --color-sky: #8BBEE9;
+  --color-veg: #1E8A3C;
+  --color-nonveg: #D3261A;
+  --color-egg: #C98A0C;
+  --color-line: rgba(48, 105, 184, 0.28);
+
+  --font-display: "Bagel Fat One", cursive;
+  --font-body: "Nunito", sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-body);
+  font-weight: 400;
+  color: var(--color-ink);
+  background: var(--color-cream);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3 {
+  font-family: var(--font-body);
+  font-weight: 700;
+}
+
+.font-display {
+  font-family: var(--font-display);
+  font-weight: 400;
+}
+
+/* Diet marks */
+.mark {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+  border: 2px solid;
+  position: relative;
+  flex-shrink: 0;
+}
+.mark::after {
+  content: "";
+  position: absolute;
+  inset: 3px;
+  border-radius: 50%;
+  background: currentColor;
+}
+.mark--veg { color: var(--color-veg); }
+.mark--nonveg { color: var(--color-nonveg); }
+.mark--egg { color: var(--color-egg); }
+
+/* Status chips */
+.status-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+.status-chip--placed { background: var(--color-orange); color: white; }
+.status-chip--preparing { background: var(--color-sky); color: var(--color-ink); }
+.status-chip--served { background: var(--color-veg); color: white; }
+.status-chip--cancelled { background: var(--color-line); color: var(--color-ink); }
+
+/* Primary button (brand sticker look) */
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 10px 20px;
+  background: var(--color-orange);
+  color: white;
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 15px;
+  border: none;
+  border-radius: 10px;
+  box-shadow: 3px 3px 0 var(--color-cobalt);
+  cursor: pointer;
+  transition: transform 0.1s, box-shadow 0.1s;
+}
+.btn-primary:hover { transform: translate(-1px, -1px); box-shadow: 4px 4px 0 var(--color-cobalt); }
+.btn-primary:active { transform: translate(1px, 1px); box-shadow: 2px 2px 0 var(--color-cobalt); }
+.btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: 3px 3px 0 var(--color-cobalt); }
+
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 10px 20px;
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 15px;
+  border: 2px solid var(--color-line);
+  border-radius: 10px;
+  cursor: pointer;
+}
+.btn-secondary:hover { border-color: var(--color-cobalt); }
+.btn-secondary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 10px 16px;
+  background: transparent;
+  color: var(--color-cobalt);
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 15px;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+}
+.btn-ghost:hover { background: rgba(48, 105, 184, 0.08); }
+
+.btn-danger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 10px 20px;
+  background: var(--color-nonveg);
+  color: white;
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 15px;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+}
+.btn-danger:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* Card */
+.card {
+  background: var(--color-paper);
+  border: 2px solid var(--color-line);
+  border-radius: 16px;
+  padding: 16px;
+}
+
+/* Toast overrides */
+[data-sonner-toaster] {
+  font-family: var(--font-body) !important;
+}
+
+/* Focus ring */
+:focus-visible {
+  outline: 2px solid var(--color-cobalt);
+  outline-offset: 2px;
+}
+
+/* Scrollbar thin */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--color-line); border-radius: 3px; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

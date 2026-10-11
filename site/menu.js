@@ -1,24 +1,20 @@
-/* MOBA menu. Behaviour ported from the menu export (menu/menu.js) onto MOBA's data
-   (menu-data.js): sections with sub-groups, sized dishes, per-section notes, and ordering.
-   A dish is built in its detail view (size, required picks, add-ons, a kitchen note),
-   lands in the cart as one line, and the cart is placed as an order for a table. */
+/* MOBA menu — wired to Supabase via api.js.
+   Loads the menu from get_public_menu(), places orders through place_order(),
+   and polls get_table_state() for live order status. */
 (() => {
   "use strict";
 
   const $ = (s, r = document) => r.querySelector(s);
   const $$ = (s, r = document) => [...r.querySelectorAll(s)];
   const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
-  // GSAP drives every authored motion; without it (or with reduced motion) the page is static but complete.
   const G = window.gsap && !reduceMotion ? window.gsap : null;
 
-  const CART_KEY = "moba:cart";
-  const ORDERS_KEY = "moba:orders";
-  const TABLE_KEY = "moba:table";
+  const CART_KEY = "moba:cart:v2";
+  const MENU_KEY = "moba:menu:v2";
+  const PENDING_KEY = "moba:pending";
   const VEG_KEY = "moba:veg";
-  const ORDER_TTL = 12 * 60 * 60 * 1000; // placed orders shown for one visit
   const DIET = { veg: "Veg", nonveg: "Non-veg", egg: "Contains egg", both: "Veg or non-veg" };
   const SPICE = ["Not spicy", "Mild", "Hot", "Very hot"];
-  const NONVEG_PICK = /chicken|fish|meat|prawn/i;
   const TOP = "top";
 
   const rupee = (n) => "₹" + Number(n).toLocaleString("en-IN");
@@ -30,7 +26,10 @@
       try { const v = localStorage.getItem(k); return v === null ? fallback : JSON.parse(v); } catch { return fallback; }
     },
     set(k, v) {
-      try { localStorage.setItem(k, JSON.stringify(v)); } catch { /* private mode: the cart just won't persist */ }
+      try { localStorage.setItem(k, JSON.stringify(v)); } catch {}
+    },
+    del(k) {
+      try { localStorage.removeItem(k); } catch {}
     },
   };
 
@@ -63,8 +62,9 @@
     listFoot: $("#listFoot"),
     total: $("#total"),
     totalCount: $("#totalCount"),
-    table: $("#tableInput"),
+    tableSlot: $("#tableSlot"),
     tableError: $("#tableError"),
+    orderingBanner: $("#orderingBanner"),
     placeBtn: $("#placeBtn"),
     searchSheet: $("#searchSheet"),
     searchInput: $("#searchInput"),
@@ -76,28 +76,48 @@
     cats: [],
     catById: new Map(),
     dishes: [],
-    items: new Map(), // dishes + add-ons, by id
+    dishById: new Map(),
+    extras: [],
+    extraById: new Map(),
     cat: null,
     tab: "all",
     veg: store.get(VEG_KEY, false) === true,
-    cart: [], // lines: { key, id, size, picks: { [label]: [option] }, addons: [id], note, qty }
-    orders: [], // placed orders from this visit, newest first
+    cart: [],
+    orders: [],
     cards: [],
     bandBtns: [],
     visIdx: -1,
+    menuVersion: 0,
+    orderingOpen: true,
+    tableLabel: null,
+    tableActive: true,
+    qrInvalid: false,
+    pollTimer: null,
+    lastFetch: 0,
   };
 
   // ── data ──────────────────────────────────────────────
   function ingest(data) {
+    state.menuVersion = data.version || 0;
+    state.orderingOpen = data.orderingOpen !== false;
+
     state.cats = (data.categories || []).map((c) => ({
       ...c,
-      art: c.art || "wok",
+      art: c.art || "pot",
       short: c.short || c.name,
-      groups: (c.groups || []).map(([id, name, ko, lede]) => ({ id, name, ko, lede })),
+      groups: c.groups || [],
       notes: c.notes || [],
       extras: c.extras || [],
     }));
     state.catById = new Map(state.cats.map((c) => [c.id, c]));
+
+    state.extras = (data.extras || []).map((x) => ({
+      ...x,
+      kind: "extra",
+      diet: DIET[x.diet] ? x.diet : null,
+    }));
+    state.extraById = new Map(state.extras.map((x) => [x.id, x]));
+
     state.dishes = (data.dishes || [])
       .filter((d) => state.catById.has(d.category))
       .map((d) => ({
@@ -107,80 +127,129 @@
         diet: DIET[d.diet] ? d.diet : null,
         spice: Math.max(0, Math.min(3, d.spice | 0)),
         sizes: d.sizes && d.sizes.length ? d.sizes : null,
-        choose: (d.choose || []).map((o) => ({ ...o, max: Math.max(1, o.max | 0) })),
+        choose: (d.choose || []).map((o) => ({
+          ...o,
+          min: o.min ?? 1,
+          max: Math.max(1, o.max | 0),
+          options: (o.options || []),
+        })),
       }));
-    state.items = new Map(state.dishes.map((d) => [d.id, d]));
-    for (const x of data.extras || []) {
-      state.items.set(x.id, { ...x, kind: "extra", available: true, diet: DIET[x.diet] ? x.diet : null });
-    }
+    state.dishById = new Map(state.dishes.map((d) => [d.id, d]));
+
+    store.set(MENU_KEY, { version: state.menuVersion, data });
     const saved = store.get(CART_KEY, []);
     state.cart = (Array.isArray(saved) ? saved : []).map(cleanLine).filter(Boolean);
-    const orders = store.get(ORDERS_KEY, []);
-    state.orders = (Array.isArray(orders) ? orders : []).filter((o) => o && Date.now() - o.placedAt < ORDER_TTL);
+    updateTableFooter();
   }
 
   const catOf = (it) => state.catById.get(it.category);
   const groupOf = (d) => catOf(d)?.groups.find((g) => g.id === d.group);
-  // Veg-only keeps dishes that can be made veg. Unmarked dishes stay hidden until the kitchen confirms them.
   const passesVeg = (it) => !state.veg || it.diet === "veg" || it.diet === "both";
   const dishesIn = (catId) => state.dishes.filter((d) => d.category === catId && passesVeg(d));
   const canBeVeg = (d) => d.diet === "veg" || d.diet === "both";
   const canBeNon = (d) => d.diet === "nonveg" || d.diet === "both";
-  const addonsFor = (d) => (catOf(d)?.extras || []).map((id) => state.items.get(id)).filter(Boolean);
-  // Dishes with something to decide open the builder instead of going straight into the cart.
+  const addonsFor = (d) => (catOf(d)?.extras || []).map((id) => state.extraById.get(id)).filter(Boolean);
   const needsBuilder = (d) => !!(d.sizes || d.choose.length);
 
   // ── cart lines ────────────────────────────────────────
-  // Identical builds share a line; anything different (size, pick, add-on, note) is its own line.
-  const lineKey = (l) => JSON.stringify([l.id, l.size, l.picks, [...l.addons].sort(), l.note.trim()]);
+  const lineKey = (l) => JSON.stringify([l.id, l.sizeId, l.picks, [...l.addons].sort(), l.note.trim()]);
 
-  // Drops anything the menu no longer has, so an old saved cart can't break the page.
   function cleanLine(l) {
-    const d = l && state.items.get(l.id);
-    if (!d || d.kind !== "dish" || !(l.qty > 0)) return null;
-    const size = d.sizes ? Math.min(Math.max(l.size | 0, 0), d.sizes.length - 1) : null;
+    const d = l && state.dishById.get(l.id);
+    if (!d || !(l.qty > 0)) return null;
+    let blocked = null;
+    if (!d.available) blocked = "sold-out";
+
+    const sizeId = d.sizes ? (d.sizes.find((s) => s.id === l.sizeId) ? l.sizeId : null) : null;
+    if (d.sizes && !sizeId) return null;
+
     const picks = {};
-    for (const o of d.choose) {
-      const got = (l.picks?.[o.label] || []).filter((x) => o.options.includes(x)).slice(0, o.max);
-      if (!got.length) return null;
-      picks[o.label] = got;
+    for (const cg of d.choose) {
+      const validOpts = new Set(cg.options.map((o) => o.id));
+      const got = (l.picks?.[cg.id] || []).filter((x) => validOpts.has(x)).slice(0, cg.max);
+      if (got.length < cg.min) return null;
+      for (const optId of got) {
+        const opt = cg.options.find((o) => o.id === optId);
+        if (opt && !opt.available) blocked = "option-unavailable";
+      }
+      picks[cg.id] = got;
     }
-    const allowed = new Set(addonsFor(d).map((x) => x.id));
-    const addons = (l.addons || []).filter((x) => allowed.has(x));
-    const line = { id: d.id, size, picks, addons, note: String(l.note || "").slice(0, 140), qty: Math.min(20, l.qty | 0) };
+
+    const allowedAddons = new Set(addonsFor(d).map((x) => x.id));
+    const addons = (l.addons || []).filter((x) => allowedAddons.has(x));
+    for (const addonId of addons) {
+      const addon = state.extraById.get(addonId);
+      if (addon && !addon.available) blocked = "addon-unavailable";
+    }
+
+    const line = { id: d.id, sizeId, picks, addons, note: String(l.note || "").slice(0, 140), qty: Math.min(20, l.qty | 0), blocked };
     return { ...line, key: lineKey(line) };
   }
 
-  const basePrice = (d, size) => (d.sizes ? d.sizes[size | 0].price : d.price);
-  const unitPrice = (l) => basePrice(state.items.get(l.id), l.size) + l.addons.reduce((a, x) => a + (state.items.get(x)?.price || 0), 0);
+  const sizePrice = (d, sizeId) => {
+    if (!d.sizes) return d.price;
+    const s = d.sizes.find((z) => z.id === sizeId);
+    return s ? s.price : d.sizes[0].price;
+  };
+  const optionPrice = (d, picks) => {
+    let total = 0;
+    for (const cg of d.choose) {
+      for (const optId of (picks[cg.id] || [])) {
+        const opt = cg.options.find((o) => o.id === optId);
+        if (opt) total += opt.price || 0;
+      }
+    }
+    return total;
+  };
+  const unitPrice = (l) => {
+    const d = state.dishById.get(l.id);
+    return sizePrice(d, l.sizeId) + optionPrice(d, l.picks) + l.addons.reduce((a, x) => a + (state.extraById.get(x)?.price || 0), 0);
+  };
   const qtyOf = (id) => state.cart.reduce((a, l) => a + (l.id === id ? l.qty : 0), 0);
   const cartCount = () => state.cart.reduce((a, l) => a + l.qty, 0);
   const cartTotal = () => state.cart.reduce((a, l) => a + unitPrice(l) * l.qty, 0);
+  const hasBlockedLines = () => state.cart.some((l) => l.blocked);
 
-  // A "veg or non-veg" dish takes the diet of the filling the diner picked.
   function lineDiet(l) {
-    const d = state.items.get(l.id);
-    if (d.diet !== "both") return d.diet;
-    const picked = Object.values(l.picks).flat();
-    if (!picked.length) return "both";
-    return picked.some((x) => NONVEG_PICK.test(x)) ? "nonveg" : "veg";
+    const d = state.dishById.get(l.id);
+    if (d.diet === "nonveg") return "nonveg";
+    let hasNonveg = false, hasEgg = false, hasVeg = false;
+    for (const cg of d.choose) {
+      for (const optId of (l.picks[cg.id] || [])) {
+        const opt = cg.options.find((o) => o.id === optId);
+        if (opt?.diet === "nonveg") hasNonveg = true;
+        else if (opt?.diet === "egg") hasEgg = true;
+        else if (opt?.diet === "veg") hasVeg = true;
+      }
+    }
+    for (const addonId of l.addons) {
+      const addon = state.extraById.get(addonId);
+      if (addon?.diet === "nonveg") hasNonveg = true;
+      else if (addon?.diet === "egg") hasEgg = true;
+    }
+    if (hasNonveg) return "nonveg";
+    if (d.diet === "egg" || hasEgg) return "egg";
+    if (d.diet === "veg") return "veg";
+    if (d.diet === "both" && hasVeg) return "veg";
+    if (d.diet === "both") return "both";
+    return d.diet;
   }
 
   function persist() {
-    store.set(CART_KEY, state.cart.map(({ key, ...l }) => l));
+    store.set(CART_KEY, state.cart.map(({ key, blocked, ...l }) => l));
   }
 
   // ── markup helpers ────────────────────────────────────
-  // Clone a food drawing inline (not <use>) so steam and flames can be styled per card.
   function art(name, cls = "art") {
     const sym = document.getElementById(`art-${name}`) || document.getElementById("art-pot");
     return `<svg class="${cls}" viewBox="${sym.getAttribute("viewBox")}" aria-hidden="true" focusable="false">${sym.innerHTML}</svg>`;
   }
 
   function plate(it) {
-    const a = catOf(it)?.art || "top";
-    if (it.image) {
-      return `<div class="plate plate--photo"><img src="${esc(it.image)}" alt="" loading="lazy" decoding="async" data-art="${esc(a)}"></div>`;
+    const a = catOf(it)?.art || "pot";
+    const imgUrl = it.image ? MobaApi.imageUrl(it.image) : null;
+    if (imgUrl) {
+      return `<div class="plate plate--photo"><img src="${esc(imgUrl)}" alt="" loading="lazy" decoding="async" data-art="${esc(a)}"></div>`;
     }
     return `<div class="plate">${art(a)}</div>`;
   }
@@ -238,8 +307,6 @@
       </div>`;
   }
 
-  // keepId re-renders in place: the rail stays on that item (or the same slot if it was
-  // filtered out) and it is marked active directly, so the price doesn't repaint and roll.
   function renderRail(keepId) {
     const prevIdx = state.visIdx;
     const items = topItems();
@@ -267,24 +334,22 @@
   const tileCount = (id) => plural(dishesIn(id).length, "dish", "dishes");
 
   function renderTiles() {
-    el.tiles.innerHTML = state.cats.map((c) => `
+    el.tiles.innerHTML = state.cats.map((c) => {
+      const imgUrl = c.image ? MobaApi.imageUrl(c.image) : null;
+      return `
       <button class="tile" type="button" data-cat="${esc(c.id)}">
-        ${art(c.art)}
+        ${imgUrl ? `<div class="tile__cover"><img src="${esc(imgUrl)}" alt="" loading="lazy"></div>` : art(c.art)}
         <span class="tile__name">${esc(c.short)}</span>
         <span class="tile__ko" lang="ko">${esc(c.ko)}</span>
         <span class="tile__count">${tileCount(c.id)}</span>
-      </button>`).join("");
+      </button>`;
+    }).join("");
   }
 
   let railRaf = 0;
-  function onRailScroll() {
-    if (!railRaf) railRaf = requestAnimationFrame(paintRail);
-  }
-
-  // The focus point is the snap position: centre on phones, the left gutter on wide screens.
+  function onRailScroll() { if (!railRaf) railRaf = requestAnimationFrame(paintRail); }
   const railPad = () => parseFloat(getComputedStyle(el.rail).paddingLeft) || 0;
 
-  // Cards fan out from the focused one, which inks itself in.
   function paintRail() {
     railRaf = 0;
     if (!state.cards.length || el.topView.hidden) return;
@@ -315,11 +380,8 @@
     el.rail.scrollTo({ left: card.offsetLeft - railPad(), behavior: smooth && !reduceMotion ? "smooth" : "auto" });
   }
 
-  function stepRail(dir) {
-    scrollRailToIndex(Math.max(0, Math.min(state.cards.length - 1, state.visIdx + dir)), true);
-  }
+  function stepRail(dir) { scrollRailToIndex(Math.max(0, Math.min(state.cards.length - 1, state.visIdx + dir)), true); }
 
-  // The price paints on with a brush, then its digits roll.
   function inkStamp(card) {
     if (!G) return;
     const svg = $(".stamp__ink svg", card);
@@ -357,8 +419,6 @@
     });
   }
 
-  // Sections with sub-groups (Boba Bar, Desserts…) get a tab per group;
-  // flat sections get Veg / Non-veg tabs when they mix both.
   function tabList() {
     const c = state.catById.get(state.cat);
     const all = dishesIn(state.cat);
@@ -368,7 +428,7 @@
         const n = all.filter((d) => d.group === g.id).length;
         if (n) tabs.push([`g:${g.id}`, g.name, n]);
       }
-      if (tabs.length === 2) tabs.pop(); // one group left: "All" says it already
+      if (tabs.length === 2) tabs.pop();
     } else {
       const veg = all.filter(canBeVeg).length;
       const non = all.filter(canBeNon).length;
@@ -383,7 +443,6 @@
     $$(".tab", el.tabs).forEach((b) => b.remove());
     el.tabs.insertAdjacentHTML("beforeend", tabs.map(([k, label, n]) => `
       <button class="tab" type="button" data-tab="${esc(k)}" aria-pressed="${k === state.tab}">${esc(label)}<small>${n}</small></button>`).join(""));
-    // The row always keeps its height (even with only "All"), so the grid never jumps.
     el.tabs.scrollLeft = 0;
     moveTabLine(animate);
   }
@@ -420,7 +479,6 @@
       </article>`;
   }
 
-  // In "All", a grouped section is split under its group headings.
   function gridHTML(list, c) {
     if (!c.groups.length || state.tab !== "all") return list.map(dishCard).join("");
     return c.groups.map((g) => {
@@ -444,7 +502,7 @@
           <div class="plate">${art(c.art)}</div>
           <p class="empty__title">${unmarked ? "Not marked veg yet" : "No veg dishes here"}</p>
           <p>${unmarked
-            ? `We haven’t marked ${esc(c.name)} veg or non-veg yet. Your waiter can tell you which ones are eggless.`
+            ? `We haven't marked ${esc(c.name)} veg or non-veg yet. Your waiter can tell you which ones are eggless.`
             : `Everything in ${esc(c.name)} has meat, fish or egg.`}</p>
           <button type="button" data-veg-off>Show all dishes</button>
         </div>`;
@@ -461,17 +519,16 @@
     }
   }
 
-  // The section's add-ons as a price list; they are picked per dish, inside the dish builder.
   function renderExtras() {
     const c = state.catById.get(state.cat);
-    const xs = c.extras.map((id) => state.items.get(id)).filter((x) => x && passesVeg(x));
+    const xs = c.extras.map((id) => state.extraById.get(id)).filter((x) => x && passesVeg(x));
     el.extras.hidden = !xs.length;
     el.extras.innerHTML = xs.length
       ? `<h3 class="extras__title">Add-ons<span lang="ko">추가</span></h3>
         <p class="extras__sub">Tap any dish to add these to it.</p>
         <ul class="extras__list">${xs.map((x) => `
           <li class="extra">
-            <span class="extra__name">${esc(x.name)}${x.badge ? `<em>${esc(x.badge)}</em>` : ""}</span>
+            <span class="extra__name">${esc(x.name)}${x.badge ? `<em>${esc(x.badge)}</em>` : ""}${!x.available ? `<em class="extra__out">out today</em>` : ""}</span>
             <span class="extra__price">+${rupee(x.price)}</span>
           </li>`).join("")}</ul>`
       : "";
@@ -497,7 +554,6 @@
     if (G && animate) G.fromTo([el.title, el.ko, el.blurb], { y: 14, opacity: 0 }, { y: 0, opacity: 1, duration: 0.55, ease: "expo.out", stagger: 0.06, clearProps: "opacity" });
   }
 
-  // TOP shows the swipe cards + section tiles; any other id shows that section's grid.
   function selectCategory(id, source) {
     const isTop = id === TOP;
     const c = state.catById.get(id);
@@ -511,7 +567,6 @@
     syncBand(animate);
     if (source !== "hash") history.replaceState(history.state, "", (isTop ? "" : `#${id}`) || location.pathname + location.search);
     if (!changed) return;
-    // Jump (not glide) to the top so the swapped-in view starts at its heading.
     if (animate) window.scrollTo({ top: 0, behavior: "instant" });
     if (isTop) {
       paintRail();
@@ -540,7 +595,6 @@
     state.veg = on;
     store.set(VEG_KEY, on);
     el.veg.setAttribute("aria-pressed", String(on));
-    // Filter in place: no entrance animations, no scroll jumps.
     renderRail(state.cards[state.visIdx]?.dataset.id);
     $$(".tile", el.tiles).forEach((t) => { $(".tile__count", t).textContent = tileCount(t.dataset.cat); });
     if (state.cat !== TOP) {
@@ -566,7 +620,7 @@
   }
 
   function refreshAdd(id) {
-    const it = state.items.get(id);
+    const it = state.dishById.get(id);
     if (!it) return;
     const q = qtyOf(id);
     $$(".add").filter((b) => b.dataset.add === id).forEach((b) => {
@@ -583,9 +637,9 @@
     new Set(ids).forEach(refreshAdd);
     if (badge) updateBadge(false);
     if (!el.listSheet.hidden && el.listSheet.dataset.mode !== "done") renderList();
+    updateTableFooter();
   }
 
-  // Adds a built line, merging it into an identical line already in the cart.
   function addLine(line) {
     const l = cleanLine(line);
     if (!l) return;
@@ -616,7 +670,6 @@
     afterCartChange([l.id]);
   }
 
-  // A copy of the plate arcs into the order button; the badge ticks up when it lands.
   function fly(src, done) {
     if (!G || !src) return done();
     const r = src.getBoundingClientRect();
@@ -636,36 +689,48 @@
       .to(clone, { scale: Math.min(1, 20 / r.width), rotate: 220, duration: 0.75, ease: "power2.in" }, 0);
   }
 
-  // "+" adds plain dishes straight away; anything with a size or a pick opens the builder.
   function quickAdd(id, btn) {
-    const d = state.items.get(id);
+    const d = state.dishById.get(id);
     if (!d || !d.available) return;
     if (needsBuilder(d)) return openDetail(id, btn);
-    addLine({ id, size: null, picks: {}, addons: [], note: "", qty: 1 });
+    addLine({ id, sizeId: null, picks: {}, addons: [], note: "", qty: 1 });
     const src = btn.closest(".dish, .card")?.querySelector(".plate") || btn;
     fly(src, () => updateBadge(true));
   }
 
-  // Size, picks, add-ons and note, as short lines for the cart and the confirmation.
   function lineDetails(l) {
-    const d = state.items.get(l.id);
+    const d = state.dishById.get(l.id);
     const out = [];
-    if (d.sizes) out.push(d.sizes[l.size].label);
-    for (const [label, got] of Object.entries(l.picks)) out.push(`${label}: ${got.join(" + ")}`);
-    if (l.addons.length) out.push(`With ${l.addons.map((x) => state.items.get(x)?.name.replace(/^Meal: /, "")).join(", ")}`);
+    if (d.sizes) {
+      const s = d.sizes.find((z) => z.id === l.sizeId);
+      if (s) out.push(s.label);
+    }
+    for (const cg of d.choose) {
+      const labels = (l.picks[cg.id] || []).map((optId) => {
+        const opt = cg.options.find((o) => o.id === optId);
+        return opt ? opt.label : "";
+      }).filter(Boolean);
+      if (labels.length) out.push(`${cg.label}: ${labels.join(" + ")}`);
+    }
+    if (l.addons.length) out.push(`With ${l.addons.map((x) => state.extraById.get(x)?.name?.replace(/^Meal: /, "")).filter(Boolean).join(", ")}`);
     return out;
   }
 
   function lineHTML(l, { editable }) {
-    const d = state.items.get(l.id);
-    const unit = unitPrice(l);
+    const d = state.dishById.get(l.id);
+    const unit = editable ? unitPrice(l) : (l.unitPrice || 0);
+    const diet = editable ? lineDiet(l) : l.diet;
+    const blocked = editable && l.blocked;
     return `
-      <li class="line${editable ? "" : " line--placed"}">
-        ${marks(lineDiet(l))}
+      <li class="line${editable ? "" : " line--placed"}${blocked ? " line--blocked" : ""}">
+        ${marks(diet)}
         <div class="line__main">
-          <p class="line__name">${editable ? "" : `<span class="line__qty">${l.qty}×</span>`}${esc(d.name)}</p>
-          ${lineDetails(l).map((t) => `<p class="line__opt">${esc(t)}</p>`).join("")}
-          ${l.note ? `<p class="line__note">“${esc(l.note)}”</p>` : ""}
+          <p class="line__name">${editable ? "" : `<span class="line__qty">${l.qty}×</span>`}${esc(editable ? d.name : l.name)}</p>
+          ${editable ? lineDetails(l).map((t) => `<p class="line__opt">${esc(t)}</p>`).join("") :
+            (l.choices || []).map((c) => `<p class="line__opt">${esc(c.label)}: ${(c.options || []).join(", ")}</p>`).join("") +
+            (l.addons || []).map((a) => `<p class="line__opt">+ ${esc(a.name)}</p>`).join("")}
+          ${l.note ? `<p class="line__note">"${esc(l.note)}"</p>` : ""}
+          ${blocked ? `<p class="line__blocked-msg">${l.blocked === "sold-out" ? "Sold out — remove to continue" : "Out today — edit or remove"}</p>` : ""}
           <p class="line__meta">${rupee(unit)}${l.qty > 1 ? ` each · ${rupee(unit * l.qty)}` : ""}</p>
           ${editable ? `<button class="line__edit" type="button" data-edit="${esc(l.key)}">Edit<span class="sr-only"> ${esc(d.name)}</span></button>` : ""}
         </div>
@@ -678,16 +743,35 @@
       </li>`;
   }
 
-  function placedHTML() {
+  const STATUS_LABELS = {
+    placed: ["Sent", "waiting for the kitchen"],
+    preparing: ["Cooking", "만드는 중"],
+    served: ["Served", "맛있게 드세요!"],
+    cancelled: ["Cancelled", "please ask our staff"],
+  };
+
+  function ordersHTML() {
     if (!state.orders.length) return "";
+    const tbl = MOBA_TABLE.get();
+    const label = state.tableLabel || (tbl ? "" : "");
+    const displayLabel = label && (/^\d+$/.test(label) ? `Table ${label}` : label);
     return `
       <section class="placed" aria-labelledby="placedTitle">
-        <h3 class="placed__title" id="placedTitle">Already ordered</h3>
-        ${state.orders.map((o) => `
-          <details class="placed__order">
-            <summary><span>Order ${esc(o.id)} · Table ${esc(o.table)}</span><b>${rupee(o.total)}</b></summary>
-            <ul class="lines">${o.items.map((l) => lineHTML(l, { editable: false })).join("")}</ul>
-          </details>`).join("")}
+        <h3 class="placed__title" id="placedTitle">Your orders${displayLabel ? ` at ${esc(displayLabel)}` : ""}</h3>
+        ${state.orders.map((o) => {
+          const [statusLabel, statusSub] = STATUS_LABELS[o.status] || ["", ""];
+          return `
+          <details class="placed__order" open>
+            <summary>
+              <span>Order #${o.orderNo} · Guest ${o.guestNo}</span>
+              <span class="status-chip status-chip--${o.status}">${esc(statusLabel)}</span>
+            </summary>
+            <p class="placed__sub">${esc(statusSub)}</p>
+            <ul class="lines">${(o.items || []).map((l) => lineHTML(l, { editable: false })).join("")}</ul>
+            <p class="placed__total">${rupee(o.total)}</p>
+          </details>`;
+        }).join("")}
+        <p class="placed__fine">Need to change something? Ask our staff.</p>
       </section>`;
   }
 
@@ -704,10 +788,10 @@
           <p class="empty__title">${state.orders.length ? "Hungry for more?" : "Nothing picked yet"}</p>
           <p>Tap + on any dish, pick your options and add-ons, and it lands here.</p>
           <button type="button" data-close>Browse the menu</button>
-        </div>`) + placedHTML();
+        </div>`) + ordersHTML();
     el.total.textContent = rupee(cartTotal());
     el.totalCount.textContent = plural(cartCount(), "item", "items");
-    el.table.value = el.table.value || store.get(TABLE_KEY, "");
+    updateTableFooter();
     if (focusSel) ($(focusSel, el.listBody) || $("[data-close].round", el.listSheet))?.focus({ preventScroll: true });
   }
 
@@ -729,84 +813,167 @@
     });
   }
 
-  // ── placing an order ──────────────────────────────────
-  const tableOk = (t) => /^\d{1,3}$/.test(t) && Number(t) > 0;
+  // ── table footer and ordering state ───────────────────
+  const QR_INVALID_MSG = "This QR code isn't active any more. Scan the code on your table, or ask our staff.";
 
-  function orderId() {
-    const n = Math.floor(1000 + Math.random() * 9000);
-    return `MB-${n}`;
+  // The stored table token was rejected: forget it and explain why ordering is off.
+  function dropInvalidTable() {
+    MOBA_TABLE.drop();
+    state.tableLabel = null;
+    state.orders = [];
+    state.qrInvalid = true;
+    stopPolling();
+    updateTableFooter();
   }
 
-  // The order as the kitchen will receive it. With window.MOBA_ORDER_URL set this is POSTed
-  // as JSON and the server may answer { id } to replace the local order number.
-  function buildOrder(table) {
-    return {
-      id: orderId(),
-      table,
-      placedAt: Date.now(),
-      currency: "INR",
-      total: cartTotal(),
-      items: state.cart.map(({ key, ...l }) => {
-        const d = state.items.get(l.id);
-        return {
-          ...l,
-          name: d.name,
-          sizeLabel: d.sizes ? d.sizes[l.size].label : null,
-          addonDetails: l.addons.map((x) => ({ id: x, name: state.items.get(x).name, price: state.items.get(x).price })),
-          diet: lineDiet(l),
-          unitPrice: unitPrice(l),
-          lineTotal: unitPrice(l) * l.qty,
-        };
-      }),
-    };
+  function tableDisplayLabel() {
+    const label = state.tableLabel;
+    if (!label) return null;
+    return /^\d+$/.test(label) ? `Table ${label}` : label;
   }
 
-  async function sendOrder(order) {
-    const url = window.MOBA_ORDER_URL;
-    if (!url) return { ...order, status: "local" };
-    const res = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(order) });
-    if (!res.ok) throw new Error(`order ${res.status}`);
-    const data = await res.json().catch(() => ({}));
-    return { ...order, id: data.id || order.id, status: "sent" };
-  }
+  function updateTableFooter() {
+    const tbl = MOBA_TABLE.get();
+    const blocked = hasBlockedLines();
+    const canPlace = tbl && state.tableActive && state.orderingOpen && !blocked && state.cart.length > 0;
 
-  function showTableError(msg) {
-    el.tableError.textContent = msg;
-    el.tableError.hidden = !msg;
-    el.table.setAttribute("aria-invalid", String(!!msg));
-    if (msg) {
-      el.table.focus();
-      if (G) G.fromTo(el.table.parentElement, { x: -8 }, { x: 0, duration: 0.5, ease: "elastic.out(1, 0.3)" });
+    // Banner
+    if (!state.orderingOpen) {
+      el.orderingBanner.innerHTML = `<div class="banner banner--closed">We're not taking orders right now. You can still browse the menu.</div>`;
+      el.orderingBanner.hidden = false;
+    } else {
+      el.orderingBanner.innerHTML = "";
+      el.orderingBanner.hidden = true;
     }
+
+    // Table slot
+    if (!tbl) {
+      el.tableSlot.innerHTML = state.qrInvalid
+        ? `<p class="table-msg table-msg--warn">${QR_INVALID_MSG}</p>`
+        : `<p class="table-msg">To order, scan the QR code on your table.</p>`;
+      el.placeBtn.hidden = true;
+    } else if (!state.tableActive) {
+      el.tableSlot.innerHTML = `<p class="table-msg table-msg--warn">This table isn't taking orders right now. Please ask our staff.</p>`;
+      el.placeBtn.hidden = true;
+    } else if (blocked) {
+      el.tableSlot.innerHTML = `<p class="table-msg table-msg--warn">Fix the marked items to place your order.</p>`;
+      el.placeBtn.hidden = false;
+      el.placeBtn.disabled = true;
+    } else {
+      const label = tableDisplayLabel();
+      el.tableSlot.innerHTML = label ? `<span class="table-chip">${esc(label)}</span>` : "";
+      el.placeBtn.hidden = false;
+      el.placeBtn.disabled = !canPlace;
+    }
+
+    el.placeBtn.textContent = "Place order";
+    el.tableError.hidden = true;
   }
 
+  // ── placing an order ──────────────────────────────────
   let placing = false;
   async function placeOrder() {
-    if (placing || !state.cart.length) return;
-    const table = el.table.value.trim();
-    if (!tableOk(table)) return showTableError(table ? "That doesn’t look like a table number. Use the number on your table’s stand." : "Add your table number so we know where to bring it.");
-    showTableError("");
-    store.set(TABLE_KEY, table);
+    const tbl = MOBA_TABLE.get();
+    if (placing || !state.cart.length || !tbl || hasBlockedLines()) return;
+
     placing = true;
     el.placeBtn.disabled = true;
     el.placeBtn.textContent = "Placing your order…";
+
+    const items = state.cart.map((l) => ({
+      dish_id: l.id,
+      size_id: l.sizeId || null,
+      option_ids: Object.values(l.picks).flat(),
+      addon_ids: l.addons,
+      qty: l.qty,
+      note: l.note || null,
+    }));
+    const expectedTotal = cartTotal();
+
+    // Idempotency: reuse the pending id if the cart hasn't changed
+    const cartKey = JSON.stringify(state.cart.map(({ key }) => key));
+    let pending = store.get(PENDING_KEY, null);
+    let clientOrderId;
+    if (pending && pending.cartKey === cartKey) {
+      clientOrderId = pending.id;
+    } else {
+      clientOrderId = crypto.randomUUID();
+      store.set(PENDING_KEY, { id: clientOrderId, cartKey });
+    }
+
     try {
-      const placed = await sendOrder(buildOrder(table));
-      state.orders.unshift(placed);
-      store.set(ORDERS_KEY, state.orders);
+      const order = await MobaApi.placeOrder({
+        token: tbl.token,
+        clientOrderId,
+        items,
+        expectedTotal,
+      });
+      store.del(PENDING_KEY);
       const ids = state.cart.map((l) => l.id);
       state.cart = [];
       persist();
       new Set(ids).forEach(refreshAdd);
       updateBadge(false);
-      renderDone(placed);
+      renderDone(order);
+      pollTableState();
     } catch (err) {
-      console.error(err);
-      toast("Your order didn’t go through. Check your connection and place it again.");
+      handlePlaceError(err);
     } finally {
       placing = false;
-      el.placeBtn.disabled = false;
-      el.placeBtn.textContent = "Place order";
+      updateTableFooter();
+    }
+  }
+
+  function handlePlaceError(err) {
+    const code = err.code || err.message;
+    const detail = err.detail;
+    switch (code) {
+      case "INVALID_TABLE":
+        dropInvalidTable();
+        toast(QR_INVALID_MSG);
+        break;
+      case "TABLE_INACTIVE":
+        state.tableActive = false;
+        updateTableFooter();
+        toast("This table isn't taking orders right now.");
+        break;
+      case "ORDERING_CLOSED":
+        state.orderingOpen = false;
+        updateTableFooter();
+        toast("We're not taking orders right now.");
+        break;
+      case "RATE_LIMITED":
+        toast("That's a lot of orders in a few minutes. Please wait a moment.");
+        break;
+      case "DISH_UNAVAILABLE": {
+        refreshMenu();
+        const d = state.dishById.get(detail);
+        toast(d ? `${d.name} just sold out.` : "Something just sold out.");
+        break;
+      }
+      case "OPTION_UNAVAILABLE":
+      case "ADDON_UNAVAILABLE":
+        refreshMenu();
+        toast("Something changed on our menu. Check your order.");
+        break;
+      case "INVALID_ITEM":
+        refreshMenu();
+        toast("Your order has changed. Please check the options.");
+        break;
+      case "PRICE_CHANGED":
+        store.del(PENDING_KEY);
+        refreshMenu();
+        toast("Prices were just updated. Check your total and try again.");
+        break;
+      case "TOO_MANY_ITEMS":
+        toast("One order can have up to 50 items. Please split it in two.");
+        break;
+      case "TIMEOUT":
+      case "NETWORK":
+        toast("We couldn't reach the kitchen. Tap Place order again.");
+        break;
+      default:
+        toast("Something went wrong. Please try again.");
     }
   }
 
@@ -815,20 +982,20 @@
     el.listTitle.textContent = "Order placed";
     el.listSub.hidden = true;
     el.listFoot.hidden = true;
-    const sent = o.status === "sent";
+    const label = tableDisplayLabel() || o.table;
+    const displayTable = label && (/^\d+$/.test(label) ? `Table ${label}` : label);
     el.listBody.innerHTML = `
       <div class="done">
         <p class="done__stamp" lang="ko" aria-hidden="true">주문 완료!</p>
-        <p class="done__id">Order ${esc(o.id)} · Table ${esc(o.table)}</p>
-        <p class="done__msg">${sent
-          ? "It’s with the kitchen. We’ll bring it to your table as soon as it’s ready."
-          : "Show this screen to your waiter and they’ll send it to the kitchen."}</p>
-        <ul class="lines">${o.items.map((l) => lineHTML(l, { editable: false })).join("")}</ul>
-        <div class="done__total"><span>${plural(o.items.reduce((a, l) => a + l.qty, 0), "item", "items")} · taxes extra</span><strong>${rupee(o.total)}</strong></div>
+        <p class="done__id">Order #${o.orderNo}${displayTable ? ` · ${esc(displayTable)}` : ""}${o.guestNo ? ` · Guest ${o.guestNo}` : ""}</p>
+        <span class="status-chip status-chip--${o.status}">${STATUS_LABELS[o.status]?.[0] || o.status}</span>
+        <p class="done__msg">It's with the kitchen. We'll bring it to your table as soon as it's ready.</p>
+        <ul class="lines">${(o.items || []).map((l) => lineHTML(l, { editable: false })).join("")}</ul>
+        <div class="done__total"><span>${plural(o.itemCount || o.items?.length || 0, "item", "items")} · taxes extra</span><strong>${rupee(o.total)}</strong></div>
         <button class="cta cta--ink" type="button" data-close>Order something else</button>
       </div>`;
     el.listBody.scrollTop = 0;
-    $(".done .cta", el.listBody).focus({ preventScroll: true });
+    $(".done .cta", el.listBody)?.focus({ preventScroll: true });
     if (G) {
       G.timeline({ defaults: { ease: "expo.out" } })
         .fromTo(".done__stamp", { scale: 2.2, rotate: -14, opacity: 0 }, { scale: 1, rotate: -4, opacity: 1, duration: 0.7, ease: "back.out(2)" })
@@ -836,18 +1003,96 @@
     }
   }
 
+  // ── polling for table state and order status ──────────
+  let pollInterval = null;
+  function startPolling() {
+    stopPolling();
+    pollTableState();
+    const interval = () => {
+      const hasActive = state.orders.some((o) => o.status === "placed" || o.status === "preparing");
+      return hasActive ? 20000 : 60000;
+    };
+    const tick = () => {
+      if (!document.hidden) pollTableState();
+      pollInterval = setTimeout(tick, interval());
+    };
+    pollInterval = setTimeout(tick, interval());
+  }
+
+  function stopPolling() {
+    if (pollInterval) { clearTimeout(pollInterval); pollInterval = null; }
+  }
+
+  async function pollTableState() {
+    const tbl = MOBA_TABLE.get();
+    if (!tbl) { stopPolling(); return; }
+    try {
+      const data = await MobaApi.getTableState(tbl.token);
+      state.tableLabel = data.table;
+      state.tableActive = data.active !== false;
+      state.orderingOpen = data.orderingOpen !== false;
+
+      if (data.lastVisitClosedAt && new Date(data.lastVisitClosedAt).getTime() > tbl.scannedAt) {
+        MOBA_TABLE.drop();
+        state.orders = [];
+        state.tableLabel = null;
+        stopPolling();
+        updateTableFooter();
+        if (!el.listSheet.hidden) {
+          el.listBody.innerHTML = `<div class="done">
+            <p class="done__stamp" lang="ko" aria-hidden="true">같이 밥 먹어요</p>
+            <p class="done__msg">Thanks for eating with us! Scan the QR on your table to order again.</p>
+            <button class="cta cta--ink" type="button" data-close>Got it</button>
+          </div>`;
+          el.listFoot.hidden = true;
+          el.listSub.hidden = true;
+          el.listSheet.dataset.mode = "done";
+        }
+        return;
+      }
+
+      state.orders = data.orders || [];
+      updateTableFooter();
+      if (!el.listSheet.hidden && el.listSheet.dataset.mode !== "done") renderList();
+    } catch (err) {
+      if (err.code === "INVALID_TABLE") dropInvalidTable();
+    }
+  }
+
+  // ── menu refresh ──────────────────────────────────────
+  async function refreshMenu() {
+    try {
+      const data = await MobaApi.getMenu();
+      if (!data || !data.categories) return;
+      state.lastFetch = Date.now();
+      if (data.version === state.menuVersion) return;
+      ingest(data);
+      state.cart = state.cart.map(cleanLine).filter(Boolean);
+      persist();
+      const currentCat = state.cat;
+      renderRail(state.cards[state.visIdx]?.dataset.id);
+      renderTiles();
+      if (currentCat !== TOP && state.catById.has(currentCat)) {
+        renderTabs(false);
+        renderGrid(false);
+        renderExtras();
+        renderNotes();
+      }
+      updateBadge(false);
+    } catch {}
+  }
+
   // ── search ────────────────────────────────────────────
   function haystack(d) {
     const c = catOf(d);
     const g = groupOf(d);
-    return [d.name, d.description, c.name, c.short, c.ko, g?.name, g?.ko, ...d.choose.flatMap((o) => o.options)].join(" ").toLowerCase();
+    return [d.name, d.description, c.name, c.short, c.ko, g?.name, g?.ko, ...d.choose.flatMap((o) => o.options.map((p) => p.label))].join(" ").toLowerCase();
   }
 
   function renderSearch() {
     const raw = el.searchInput.value.trim();
     const terms = raw.toLowerCase().split(/\s+/).filter(Boolean);
-    let list;
-    let label;
+    let list, label;
     if (!terms.length) {
       list = topItems();
       label = "Most loved";
@@ -865,13 +1110,13 @@
             ${d.available ? addBtn(d, qtyOf(d.id)) : ""}
           </li>`).join("")}</ul>`
       : `<div class="empty">
-          <p class="empty__title">Nothing called “${esc(raw)}”</p>
+          <p class="empty__title">Nothing called "${esc(raw)}"</p>
           <p>Try a dish, a flavour or a filling, like gochujang, paneer or matcha.${state.veg ? " Veg only is on, so non-veg dishes are hidden." : ""}</p>
           ${state.veg ? `<button type="button" data-veg-off>Show all dishes</button>` : ""}
         </div>`;
   }
 
-  // ── layers: detail + sheets share one back-button aware stack ──
+  // ── layers ────────────────────────────────────────────
   const layers = [];
 
   function openLayer(node, panel) {
@@ -899,7 +1144,6 @@
       const top = layers[layers.length - 1];
       if (top) {
         top.node.inert = false;
-        // Back on the cart after editing a line: show the edit.
         if (top.node === el.listSheet && el.listSheet.dataset.mode !== "done") renderList();
       } else {
         el.app.inert = false;
@@ -916,8 +1160,6 @@
     else tl.to(panel, { yPercent: 100, duration: 0.35, ease: "power3.in" }, 0);
   }
 
-  // UI closes act at once and swallow the popstate their history.back() causes,
-  // so a quick close-then-open can't pop the wrong layer.
   let skipPop = 0;
   function requestClose() {
     if (!layers.length) return;
@@ -931,27 +1173,38 @@
   });
 
   // ── detail: the dish builder ──────────────────────────
-  // b: { d, size, picks, addons, note, qty, editKey }
   let b = null;
 
-  const builtLine = () => ({ id: b.d.id, size: b.size, picks: b.picks, addons: b.addons, note: b.note, qty: b.qty });
-  const builtUnit = () => basePrice(b.d, b.size) + b.addons.reduce((a, x) => a + (state.items.get(x)?.price || 0), 0);
-  const missingPicks = () => b.d.choose.filter((o) => !(b.picks[o.label] || []).length);
+  const builtLine = () => ({ id: b.d.id, sizeId: b.sizeId, picks: b.picks, addons: b.addons, note: b.note, qty: b.qty });
+  const builtUnit = () => {
+    const d = b.d;
+    let total = sizePrice(d, b.sizeId);
+    for (const cg of d.choose) {
+      for (const optId of (b.picks[cg.id] || [])) {
+        const opt = cg.options.find((o) => o.id === optId);
+        if (opt) total += opt.price || 0;
+      }
+    }
+    total += b.addons.reduce((a, x) => a + (state.extraById.get(x)?.price || 0), 0);
+    return total;
+  };
+  const missingPicks = () => b.d.choose.filter((cg) => (b.picks[cg.id] || []).length < cg.min);
 
   function optionsHTML(d) {
-    return d.choose.map((o, oi) => {
-      const multi = o.max > 1;
-      const chosen = b.picks[o.label] || [];
+    return d.choose.map((cg, oi) => {
+      const multi = cg.max > 1;
+      const optional = cg.min === 0;
+      const chosen = b.picks[cg.id] || [];
       return `
         <fieldset class="opt" data-opt="${oi}">
-          <legend class="opt__label">${esc(o.label)}<small>${multi ? `Pick up to ${o.max}` : "Pick one"}</small></legend>
-          <div class="chips">${o.options.map((x) => `
-            <label class="chip">
-              <input type="${multi ? "checkbox" : "radio"}" name="opt-${oi}" value="${esc(x)}" data-pick="${oi}"${chosen.includes(x) ? " checked" : ""}>
-              <span>${esc(x)}</span>
+          <legend class="opt__label">${esc(cg.label)}<small>${optional ? `Optional · pick up to ${cg.max}` : (multi ? `Pick up to ${cg.max}` : "Pick one")}</small></legend>
+          <div class="chips">${cg.options.map((opt) => `
+            <label class="chip${!opt.available ? " chip--disabled" : ""}">
+              <input type="${multi || optional ? "checkbox" : "radio"}" name="opt-${oi}" value="${esc(opt.id)}" data-pick="${oi}"${chosen.includes(opt.id) ? " checked" : ""}${!opt.available ? " disabled" : ""}>
+              <span>${esc(opt.label)}${opt.price ? ` <small>+${rupee(opt.price)}</small>` : ""}${!opt.available ? " <small>(out today)</small>" : ""}</span>
             </label>`).join("")}
           </div>
-          <p class="opt__error" hidden>Pick ${multi ? "at least one" : "one"} to add this dish.</p>
+          <p class="opt__error" hidden>Pick ${optional ? "at least one" : (multi ? "at least one" : "one")} to add this dish.</p>
         </fieldset>`;
     }).join("");
   }
@@ -963,10 +1216,10 @@
       <fieldset class="opt">
         <legend class="opt__label">Add-ons<small>Optional</small></legend>
         <div class="addons">${xs.map((x) => `
-          <label class="addon">
-            <input type="checkbox" value="${esc(x.id)}" data-addon${b.addons.includes(x.id) ? " checked" : ""}>
+          <label class="addon${!x.available ? " addon--disabled" : ""}">
+            <input type="checkbox" value="${esc(x.id)}" data-addon${b.addons.includes(x.id) ? " checked" : ""}${!x.available ? " disabled" : ""}>
             <span class="addon__box" aria-hidden="true"></span>
-            <span class="addon__name">${esc(x.name)}${x.badge ? `<em>${esc(x.badge)}</em>` : ""}</span>
+            <span class="addon__name">${esc(x.name)}${x.badge ? `<em>${esc(x.badge)}</em>` : ""}${!x.available ? `<em>(out today)</em>` : ""}</span>
             <span class="addon__price">+${rupee(x.price)}</span>
           </label>`).join("")}
         </div>
@@ -992,7 +1245,7 @@
       <div class="detail__band">
         <ul class="facts">
           ${d.spice ? `<li><span aria-hidden="true">${chilis(d.spice)}</span>${SPICE[d.spice]}</li>` : ""}
-          <li>${d.diet ? DIET[d.diet] : "Ask us if it’s veg"}</li>
+          <li>${d.diet ? DIET[d.diet] : "Ask us if it's veg"}</li>
           ${c.id === "boba" ? "<li>Pearls included</li>" : ""}
         </ul>
         ${desc ? `<p class="detail__desc">${esc(desc)}</p>` : ""}
@@ -1001,8 +1254,8 @@
         ${d.sizes ? `
         <div class="opt" role="group" aria-labelledby="sizeLabel">
           <p class="opt__label" id="sizeLabel">Size</p>
-          <div class="sizes">${d.sizes.map((s, i) => `
-            <button class="size" type="button" data-size="${i}" aria-pressed="${i === b.size}"><b>${esc(s.label)}</b><span>${rupee(s.price)}</span></button>`).join("")}
+          <div class="sizes">${d.sizes.map((s) => `
+            <button class="size" type="button" data-size="${esc(s.id)}" aria-pressed="${s.id === b.sizeId}"><b>${esc(s.label)}</b><span>${rupee(s.price)}</span></button>`).join("")}
           </div>
         </div>` : ""}
         ${optionsHTML(d)}
@@ -1043,30 +1296,33 @@
     if (G) G.fromTo("#buyPrice", { y: -10, opacity: 0.2 }, { y: 0, opacity: 1, duration: 0.35, ease: "expo.out" });
   }
 
-  function setSize(i) {
-    b.size = i;
-    $$(".size", el.detailPanel).forEach((s) => s.setAttribute("aria-pressed", String(Number(s.dataset.size) === i)));
+  function setSize(sizeId) {
+    b.sizeId = sizeId;
+    $$(".size", el.detailPanel).forEach((s) => s.setAttribute("aria-pressed", String(s.dataset.size === sizeId)));
     updateBuy();
     bumpPrice();
   }
 
   function onPick(input) {
-    const o = b.d.choose[Number(input.dataset.pick)];
-    const set = $(`fieldset[data-opt="${input.dataset.pick}"]`, el.detailPanel);
+    const oi = Number(input.dataset.pick);
+    const cg = b.d.choose[oi];
+    const set = $(`fieldset[data-opt="${oi}"]`, el.detailPanel);
     const boxes = $$("input", set);
-    if (o.max > 1) {
+    if (cg.max > 1 || cg.min === 0) {
       const on = boxes.filter((x) => x.checked);
-      if (on.length > o.max) input.checked = false; // already at the limit
+      if (on.length > cg.max) input.checked = false;
       const got = boxes.filter((x) => x.checked);
-      boxes.forEach((x) => { x.disabled = !x.checked && got.length >= o.max; });
-      b.picks[o.label] = got.map((x) => x.value);
+      boxes.forEach((x) => { if (!x.disabled) x.disabled = false; if (!x.checked && got.length >= cg.max) x.disabled = true; });
+      b.picks[cg.id] = got.map((x) => x.value);
     } else {
-      b.picks[o.label] = [input.value];
+      b.picks[cg.id] = [input.value];
     }
-    if (b.picks[o.label].length) {
+    if ((b.picks[cg.id] || []).length >= cg.min) {
       set.classList.remove("is-missing");
       $(".opt__error", set).hidden = true;
     }
+    updateBuy();
+    bumpPrice();
   }
 
   function onAddon(input) {
@@ -1075,20 +1331,19 @@
     bumpPrice();
   }
 
-  // editKey opens an existing cart line to change it; otherwise a fresh build starts.
   function openDetail(id, origin, editKey) {
-    const d = state.items.get(id);
-    if (!d || d.kind !== "dish") return;
+    const d = state.dishById.get(id);
+    if (!d) return;
     const line = editKey && state.cart.find((l) => l.key === editKey);
     b = line
-      ? { d, size: line.size, picks: JSON.parse(JSON.stringify(line.picks)), addons: [...line.addons], note: line.note, qty: line.qty, editKey }
-      : { d, size: d.sizes ? 0 : null, picks: {}, addons: [], note: "", qty: 1, editKey: null };
+      ? { d, sizeId: line.sizeId, picks: JSON.parse(JSON.stringify(line.picks)), addons: [...line.addons], note: line.note, qty: line.qty, editKey }
+      : { d, sizeId: d.sizes ? d.sizes[0].id : null, picks: {}, addons: [], note: "", qty: 1, editKey: null };
     el.detailPanel.innerHTML = detailHTML(d);
     el.detailPanel.scrollTop = 0;
-    // Pick-two groups start with their limit applied.
     $$("fieldset[data-opt]", el.detailPanel).forEach((set) => {
-      const o = d.choose[Number(set.dataset.opt)];
-      if (o.max > 1 && (b.picks[o.label] || []).length >= o.max) $$("input", set).forEach((x) => { x.disabled = !x.checked; });
+      const oi = Number(set.dataset.opt);
+      const cg = d.choose[oi];
+      if ((cg.max > 1 || cg.min === 0) && (b.picks[cg.id] || []).length >= cg.max) $$("input", set).forEach((x) => { if (!x.checked) x.disabled = true; });
     });
     updateBuy();
     openLayer(el.detail);
@@ -1120,15 +1375,15 @@
     b.note = $("#lineNote")?.value || "";
     const missing = b.qty > 0 ? missingPicks() : [];
     if (missing.length) {
-      // Point at the first unanswered choice instead of failing silently.
-      missing.forEach((o) => {
-        const set = $(`fieldset[data-opt="${b.d.choose.indexOf(o)}"]`, el.detailPanel);
+      missing.forEach((cg) => {
+        const oi = b.d.choose.indexOf(cg);
+        const set = $(`fieldset[data-opt="${oi}"]`, el.detailPanel);
         set.classList.add("is-missing");
         $(".opt__error", set).hidden = false;
       });
       const first = $(".opt.is-missing", el.detailPanel);
       first.scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth", block: "center" });
-      $("input", first).focus({ preventScroll: true });
+      $("input", first)?.focus({ preventScroll: true });
       if (G) G.fromTo(first, { x: -10 }, { x: 0, duration: 0.6, ease: "elastic.out(1, 0.3)" });
       return;
     }
@@ -1186,11 +1441,6 @@
     el.searchInput.addEventListener("input", renderSearch);
     $("#clearList").addEventListener("click", clearList);
     el.placeBtn.addEventListener("click", placeOrder);
-    el.table.addEventListener("input", () => {
-      el.table.value = el.table.value.replace(/\D/g, "").slice(0, 3);
-      if (!el.tableError.hidden && tableOk(el.table.value)) showTableError("");
-    });
-    el.table.addEventListener("keydown", (e) => { if (e.key === "Enter") placeOrder(); });
 
     el.detailPanel.addEventListener("change", (e) => {
       if (e.target.matches("[data-pick]")) onPick(e.target);
@@ -1203,7 +1453,6 @@
     document.addEventListener("click", (e) => {
       const t = e.target.closest("button, [data-close]");
       if (!t) return;
-
       if (t.matches("[data-close]")) return requestClose();
       if (t.matches("[data-add]")) return quickAdd(t.dataset.add, t);
       if (t.matches("[data-open]")) return openDetail(t.dataset.open, t);
@@ -1216,7 +1465,6 @@
         const d = Number(t.dataset.step);
         const idx = state.cart.findIndex((l) => l.key === key);
         stepLine(key, d);
-        // Keep focus on the same stepper button, or the next line's when this one went.
         return renderList(state.cart.some((l) => l.key === key)
           ? `[data-line="${CSS.escape(key)}"][data-step="${d}"]`
           : state.cart[idx] ? `[data-line="${CSS.escape(state.cart[idx].key)}"][data-step="-1"]` : null);
@@ -1225,7 +1473,7 @@
         const l = state.cart.find((x) => x.key === t.dataset.edit);
         return l && openDetail(l.id, null, l.key);
       }
-      if (t.matches(".detail [data-size]")) return setSize(Number(t.dataset.size));
+      if (t.matches(".detail [data-size]")) return setSize(t.dataset.size);
       if (t.matches(".detail [data-step]")) {
         b.qty = Math.max(b.editKey ? 0 : 1, Math.min(20, b.qty + Number(t.dataset.step)));
         if (G) G.fromTo("#qty", { y: Number(t.dataset.step) * -8, opacity: 0.2 }, { y: 0, opacity: 1, duration: 0.3, ease: "expo.out" });
@@ -1238,13 +1486,11 @@
       if (e.key === "Escape" && layers.length) requestClose();
     });
 
-    // Links like home.html → menu.html#rameyon open that section.
     window.addEventListener("hashchange", () => {
       const id = location.hash.slice(1);
       if (state.catById.has(id)) selectCategory(id, "hash");
     });
 
-    // A missing photo falls back to the line-art plate.
     document.addEventListener("error", (e) => {
       const img = e.target;
       if (img.tagName !== "IMG" || !img.closest(".plate")) return;
@@ -1263,10 +1509,14 @@
         moveTabLine(false);
       }, 120);
     });
+
+    document.addEventListener("visibilitychange", () => {
+      if (!document.hidden && Date.now() - state.lastFetch > 60000) refreshMenu();
+      if (!document.hidden) pollTableState();
+    });
   }
 
   // ── intro ─────────────────────────────────────────────
-  // Arriving through the bubble transition, wait for the holes to open before the band drops in.
   function intro(fromBubble, isTop) {
     if (!G) return;
     const tl = G.timeline({ defaults: { ease: "expo.out" }, delay: fromBubble ? 0.7 : 0 });
@@ -1282,29 +1532,49 @@
 
   function showLoadError() {
     el.rail.removeAttribute("aria-busy");
-    el.rail.innerHTML = `<p class="rail__status" role="alert">The menu didn’t load.<br><button type="button" id="retry">Try again</button></p>`;
+    el.rail.innerHTML = `<p class="rail__status" role="alert">The menu didn't load.<br><button type="button" id="retry">Try again</button></p>`;
     el.dishes.hidden = true;
     $(".explore", el.topView).hidden = true;
     $("#retry").addEventListener("click", () => location.reload());
   }
 
-  // The table's QR code can carry its number: menu.html?table=12
-  function readTable() {
-    const t = new URLSearchParams(location.search).get("table");
-    if (t && tableOk(t.trim())) store.set(TABLE_KEY, t.trim());
-  }
-
   // ── start ─────────────────────────────────────────────
-  function boot() {
+  async function boot() {
     const fromBubble = document.documentElement.classList.contains("bubble-cover");
     el.veg.setAttribute("aria-pressed", String(state.veg));
-    readTable();
 
-    const data = window.MOBA_MENU;
-    if (!data) { showLoadError(); return; }
-    ingest(data);
-    if (!state.cats.length) { showLoadError(); return; }
+    // Render from cache immediately
+    const cached = store.get(MENU_KEY, null);
+    if (cached?.data) {
+      ingest(cached.data);
+      render(fromBubble);
+    }
 
+    // Fetch fresh menu
+    try {
+      const data = await MobaApi.getMenu();
+      state.lastFetch = Date.now();
+      if (data && data.categories) {
+        const wasEmpty = !state.cats.length;
+        if (data.version !== state.menuVersion || wasEmpty) {
+          ingest(data);
+          if (wasEmpty) render(fromBubble);
+          else rerender();
+        }
+      } else if (!state.cats.length) {
+        showLoadError();
+        return;
+      }
+    } catch {
+      if (!state.cats.length) { showLoadError(); return; }
+    }
+
+    // Start table polling
+    const tbl = MOBA_TABLE.get();
+    if (tbl) startPolling();
+  }
+
+  function render(fromBubble) {
     renderRail();
     renderBand();
     bind();
@@ -1315,6 +1585,22 @@
     selectCategory(first, "init");
     paintRail();
     intro(fromBubble, first === TOP);
+    updateTableFooter();
+  }
+
+  function rerender() {
+    state.cart = state.cart.map(cleanLine).filter(Boolean);
+    persist();
+    renderRail(state.cards[state.visIdx]?.dataset.id);
+    renderTiles();
+    if (state.cat !== TOP && state.catById.has(state.cat)) {
+      renderTabs(false);
+      renderGrid(false);
+      renderExtras();
+      renderNotes();
+    }
+    updateBadge(false);
+    updateTableFooter();
   }
 
   boot();
