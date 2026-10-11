@@ -1,40 +1,49 @@
 import { NavLink } from "react-router-dom";
-import {
-  LayoutDashboard,
-  UtensilsCrossed,
-  Grid3X3,
-  BookOpen,
-} from "lucide-react";
+import { NAV } from "./nav";
+import AccountMenu, { SoundToggle } from "./AccountMenu";
+import { OrderingPill } from "../dashboard/OrderingSwitch";
 
-const links = [
-  { to: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
-  { to: "/orders", icon: UtensilsCrossed, label: "Orders" },
-  { to: "/tables", icon: Grid3X3, label: "Tables" },
-  { to: "/menu", icon: BookOpen, label: "Menu" },
-];
+export function MobileTopBar({ orderingOpen, loading }) {
+  return (
+    <div className="md:hidden sticky top-0 z-30 flex h-14 items-center justify-between gap-3 border-b border-line bg-surface/95 px-4 backdrop-blur-sm">
+      <NavLink to="/dashboard" className="flex items-center gap-2" aria-label="MOBA Admin, dashboard">
+        <img src="/logo-mark.webp" alt="" width="32" height="32" className="h-8 w-8 object-contain" />
+        <span className="text-title font-extrabold">MOBA</span>
+      </NavLink>
+      <div className="flex items-center gap-1.5">
+        <OrderingPill isOpen={orderingOpen} loading={loading} />
+        <SoundToggle compact />
+        <AccountMenu compact />
+      </div>
+    </div>
+  );
+}
 
 export default function BottomNav({ waitingCount }) {
   return (
-    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-paper border-t-2 border-line flex">
-      {links.map(({ to, icon: Icon, label }) => (
+    <nav
+      aria-label="Main"
+      className="md:hidden fixed inset-x-0 bottom-0 z-40 flex border-t border-line bg-surface/95 px-2 pt-1.5 pb-[max(6px,env(safe-area-inset-bottom))] backdrop-blur-sm"
+    >
+      {NAV.map(({ to, icon: Icon, label, badge }) => (
         <NavLink
           key={to}
           to={to}
           className={({ isActive }) =>
-            `flex-1 flex flex-col items-center gap-0.5 py-2 text-xs font-semibold transition-colors relative ${
-              isActive ? "text-orange" : "text-ink/40"
+            `group flex flex-1 flex-col items-center gap-0.5 py-1 text-[11px] font-semibold transition-colors ${
+              isActive ? "text-ink" : "text-ink-3"
             }`
           }
         >
-          <div className="relative">
-            <Icon size={22} />
-            {label === "Orders" && waitingCount > 0 && (
-              <span className="absolute -top-1.5 -right-2.5 bg-orange text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center leading-none">
-                {waitingCount}
+          {({ isActive }) => (
+            <>
+              <span className={`relative flex h-8 w-14 items-center justify-center rounded-full transition-colors ${isActive ? "bg-lemon" : ""}`}>
+                <Icon size={20} />
+                {badge && waitingCount > 0 && <span className="badge absolute -right-0.5 -top-1">{waitingCount}</span>}
               </span>
-            )}
-          </div>
-          {label}
+              {label}
+            </>
+          )}
         </NavLink>
       ))}
     </nav>

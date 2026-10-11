@@ -7,26 +7,30 @@ export default function ConfirmDialog({
   title,
   message,
   confirmLabel = "Confirm",
+  cancelLabel = "Cancel",
   danger = false,
   loading = false,
   children,
 }) {
   return (
-    <Modal open={open} onClose={onClose} title={title}>
-      {message && <p className="text-ink/70 mb-4">{message}</p>}
+    <Modal
+      open={open}
+      onClose={onClose}
+      title={title}
+      size="sm"
+      footer={
+        <>
+          <button onClick={onClose} className="btn btn-secondary" disabled={loading}>
+            {cancelLabel}
+          </button>
+          <button onClick={onConfirm} className={`btn ${danger ? "btn-danger" : "btn-primary"}`} disabled={loading}>
+            {loading ? "Working…" : confirmLabel}
+          </button>
+        </>
+      }
+    >
+      {message && <p className="text-body text-ink-2">{message}</p>}
       {children}
-      <div className="flex gap-3 justify-end mt-4">
-        <button onClick={onClose} className="btn-secondary" disabled={loading}>
-          Cancel
-        </button>
-        <button
-          onClick={onConfirm}
-          className={danger ? "btn-danger" : "btn-primary"}
-          disabled={loading}
-        >
-          {loading ? "Working…" : confirmLabel}
-        </button>
-      </div>
     </Modal>
   );
 }

@@ -1,4 +1,5 @@
 import { supabase } from "../lib/supabase";
+import { isDemo, exitDemo } from "../lib/demo";
 
 export async function signIn(email, password) {
   const { data, error } = await supabase.auth.signInWithPassword({
@@ -22,6 +23,7 @@ export async function signIn(email, password) {
 }
 
 export async function signOut() {
+  if (isDemo) return exitDemo();
   const { error } = await supabase.auth.signOut();
   if (error) throw error;
 }

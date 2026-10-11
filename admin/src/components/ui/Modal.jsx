@@ -1,46 +1,39 @@
-import { useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { X } from "lucide-react";
+import { useOverlay } from "./useOverlay";
 
-export default function Modal({ open, onClose, title, children, wide }) {
-  const ref = useRef(null);
+const WIDTHS = { sm: "md:max-w-[420px]", md: "md:max-w-[520px]", lg: "md:max-w-[680px]" };
 
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (e) => {
-      if (e.key === "Escape") onClose();
-    };
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
-  }, [open, onClose]);
-
+export default function Modal({ open, onClose, title, description, children, footer, size = "md", wide }) {
+  const panelRef = useOverlay(open, onClose);
   if (!open) return null;
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center">
+  return createPortal(
+    <div className="fixed inset-0 z-[60] flex items-end md:items-center justify-center md:p-6">
+      <div className="absolute inset-0 bg-ink/35 animate-fade-in" onClick={onClose} aria-hidden="true" />
       <div
-        className="absolute inset-0 bg-ink/40"
-        onClick={onClose}
-        aria-hidden="true"
-      />
-      <div
-        ref={ref}
+        ref={panelRef}
         role="dialog"
         aria-modal="true"
         aria-label={title}
-        className={`relative bg-paper rounded-t-2xl md:rounded-2xl w-full ${wide ? "max-w-2xl" : "max-w-md"} max-h-[90vh] overflow-y-auto border-2 border-line`}
+        tabIndex={-1}
+        className={`relative w-full ${WIDTHS[wide ? "lg" : size]} max-h-[92dvh] flex flex-col bg-surface rounded-t-[20px] md:rounded-[18px] shadow-pop animate-sheet-up md:animate-pop-in`}
       >
-        <div className="sticky top-0 bg-paper z-10 flex items-center justify-between p-4 border-b-2 border-line">
-          <h2 className="font-bold text-lg">{title}</h2>
-          <button
-            onClick={onClose}
-            className="p-1.5 rounded-lg hover:bg-ink/6"
-            aria-label="Close"
-          >
-            <X size={20} />
+        <div className="flex items-start justify-between gap-4 px-5 pt-5 pb-3">
+          <div className="min-w-0">
+            <h2 className="text-h3 font-bold">{title}</h2>
+            {description && <p className="text-body text-ink-2 mt-1">{description}</p>}
+          </div>
+          <button onClick={onClose} className="btn btn-ghost btn-icon btn-sm -mr-1.5 -mt-0.5" aria-label="Close">
+            <X size={18} />
           </button>
         </div>
-        <div className="p-4">{children}</div>
+        <div className="px-5 pb-5 overflow-y-auto">{children}</div>
+        {footer && (
+          <div className="flex flex-wrap items-center justify-end gap-2 px-5 py-4 border-t border-line">{footer}</div>
+        )}
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

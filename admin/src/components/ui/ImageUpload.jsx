@@ -1,16 +1,15 @@
 import { useRef, useState } from "react";
-import { ImagePlus, Trash2 } from "lucide-react";
+import { ImagePlus, RefreshCw, Trash2 } from "lucide-react";
 import toast from "react-hot-toast";
 import { uploadMenuImage, imageUrl } from "../../services/storageService";
 
-export default function ImageUpload({ value, onChange, folder, round = true }) {
+export default function ImageUpload({ value, onChange, folder, size = 112, label = "Photo" }) {
   const inputRef = useRef(null);
   const [busy, setBusy] = useState(false);
+  const [over, setOver] = useState(false);
   const url = imageUrl(value);
 
-  async function onFile(e) {
-    const file = e.target.files?.[0];
-    e.target.value = "";
+  async function take(file) {
     if (!file) return;
     setBusy(true);
     try {
@@ -24,27 +23,65 @@ export default function ImageUpload({ value, onChange, folder, round = true }) {
 
   return (
     <div className="flex items-center gap-4">
-      <div
-        className={`w-24 h-24 bg-cream border-2 border-line overflow-hidden flex items-center justify-center shrink-0 ${
-          round ? "rounded-full" : "rounded-xl"
-        }`}
+      <button
+        type="button"
+        onClick={() => inputRef.current?.click()}
+        onDragOver={(e) => {
+          e.preventDefault();
+          setOver(true);
+        }}
+        onDragLeave={() => setOver(false)}
+        onDrop={(e) => {
+          e.preventDefault();
+          setOver(false);
+          take(e.dataTransfer.files?.[0]);
+        }}
+        disabled={busy}
+        style={{ width: size, height: size }}
+        aria-label={url ? `Replace ${label.toLowerCase()}` : `Add ${label.toLowerCase()}`}
+        className={`group relative shrink-0 overflow-hidden rounded-[16px] border transition-colors ${
+          url ? "border-line" : "border-dashed border-line-strong bg-sunken hover:bg-hover"
+        } ${over ? "!border-cobalt !bg-cobalt-soft" : ""}`}
       >
         {url ? (
-          <img src={url} alt="" className="w-full h-full object-cover" />
+          <>
+            <img src={url} alt="" className="h-full w-full object-cover" />
+            <span className="absolute inset-0 flex items-center justify-center bg-ink/45 text-white opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity">
+              <RefreshCw size={18} />
+            </span>
+          </>
         ) : (
-          <ImagePlus size={28} className="text-ink/30" />
+          <span className="flex h-full flex-col items-center justify-center gap-1.5 text-ink-2">
+            <ImagePlus size={22} strokeWidth={1.75} />
+            <span className="text-cap font-semibold">{busy ? "Uploading…" : "Add photo"}</span>
+          </span>
         )}
-      </div>
-      <div className="flex flex-col gap-2">
-        <input ref={inputRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={onFile} />
-        <button type="button" className="btn-secondary text-sm" disabled={busy} onClick={() => inputRef.current?.click()}>
-          {busy ? "Uploading…" : url ? "Replace photo" : "Add photo"}
-        </button>
-        {url && (
-          <button type="button" className="btn-ghost text-sm text-nonveg" disabled={busy} onClick={() => onChange(null)}>
-            <Trash2 size={14} /> Remove
+        {busy && url && <span className="absolute inset-0 skeleton !rounded-none opacity-70" />}
+      </button>
+      <div className="min-w-0">
+        <input
+          ref={inputRef}
+          type="file"
+          accept="image/jpeg,image/png,image/webp"
+          className="hidden"
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            e.target.value = "";
+            take(file);
+          }}
+        />
+        <p className="text-body font-semibold">{label}</p>
+        <p className="text-meta text-ink-3 mt-0.5">JPEG, PNG or WebP. Drop a file or click to choose.</p>
+        <div className="flex flex-wrap gap-1.5 mt-2.5">
+          <button type="button" className="btn btn-secondary btn-sm" disabled={busy} onClick={() => inputRef.current?.click()}>
+            {busy ? "Uploading…" : url ? "Replace" : "Choose file"}
           </button>
-        )}
+          {url && (
+            <button type="button" className="btn btn-ghost btn-sm text-red hover:!text-red" disabled={busy} onClick={() => onChange(null)}>
+              <Trash2 size={14} /> Remove
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );

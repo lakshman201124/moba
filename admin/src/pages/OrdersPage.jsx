@@ -1,123 +1,145 @@
+import { useMemo } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { useNavigate } from "react-router-dom";
+import { LayoutGrid, ListOrdered, History, Armchair } from "lucide-react";
 import { getTablesOverview } from "../services/tableService";
+import { getAllDishes } from "../services/dishService";
+import { getDashboard } from "../services/dashboardService";
+import { isUuid } from "../lib/ids";
+import { errorMessage } from "../lib/errors";
 import { useWakeLock } from "../hooks/useWakeLock";
-import { tableLabel, durationMin, rupee } from "../lib/format";
-import { useState } from "react";
-import Skeleton from "../components/ui/Skeleton";
+import { useMediaQuery, useNow } from "../hooks/useNow";
+import { tableState, TABLE_STATE } from "../components/ui/StatusChip";
+import PageHeader from "../components/ui/PageHeader";
 import ErrorState from "../components/ui/ErrorState";
 import EmptyState from "../components/ui/EmptyState";
+import Drawer from "../components/ui/Drawer";
+import { SegmentedLinks } from "../components/ui/Segmented";
+import FloorTable from "../components/orders/FloorTable";
+import TicketPanel from "../components/orders/TicketPanel";
+import LiveBoard from "../components/orders/LiveBoard";
+import OrderHistory from "../components/orders/OrderHistory";
+import NotFoundPage from "./NotFoundPage";
 
-const FILTERS = ["all", "occupied", "attention"];
+const DOT = { attention: "bg-orange", occupied: "bg-cobalt", free: "bg-green", disabled: "bg-slate" };
 
-export default function OrdersPage() {
+function useDishImages() {
+  const q = useQuery({ queryKey: ["dishes-all"], queryFn: getAllDishes, staleTime: 5 * 60000 });
+  return useMemo(() => Object.fromEntries((q.data || []).map((d) => [d.id, d.image_path])), [q.data]);
+}
+
+export default function OrdersPage({ view }) {
   useWakeLock();
-  const navigate = useNavigate();
-  const [filter, setFilter] = useState("all");
+  const { tableId } = useParams();
+  const images = useDishImages();
+  const dash = useQuery({ queryKey: ["dashboard"], queryFn: getDashboard, refetchInterval: 60000 });
+  const live = (dash.data?.waiting || 0) + (dash.data?.preparing || 0);
 
-  const { data: tables, isLoading, error, refetch } = useQuery({
-    queryKey: ["tables-overview"],
-    queryFn: getTablesOverview,
-    refetchInterval: 60000,
-  });
-
-  if (isLoading)
-    return (
-      <div className="p-4 md:p-6">
-        <Skeleton className="h-8 w-40 mb-4" />
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
-          <Skeleton className="h-28" count={8} />
-        </div>
-      </div>
-    );
-  if (error) return <ErrorState message={error.message} onRetry={refetch} />;
-
-  const filtered = (tables || []).filter((t) => {
-    if (filter === "occupied") return t.session;
-    if (filter === "attention") return t.session?.placed > 0;
-    return true;
-  });
+  if (tableId && !isUuid(tableId)) return <NotFoundPage message="That table doesn't exist." backTo="/orders" backLabel="Back to orders" />;
 
   return (
-    <div className="p-4 md:p-6 max-w-6xl mx-auto">
-      <h1 className="font-display text-2xl mb-4">Orders</h1>
-
-      <div className="flex gap-2 mb-4 overflow-x-auto">
-        {FILTERS.map((f) => (
-          <button
-            key={f}
-            onClick={() => setFilter(f)}
-            className={`px-4 py-2 rounded-full text-sm font-semibold whitespace-nowrap border-2 transition-colors ${
-              filter === f
-                ? "border-cobalt bg-cobalt text-white"
-                : "border-line bg-paper text-ink/60 hover:border-cobalt"
-            }`}
-          >
-            {f === "all"
-              ? "All"
-              : f === "occupied"
-                ? "Occupied"
-                : "Needs attention"}
-          </button>
-        ))}
-      </div>
-
-      {!filtered.length ? (
-        <EmptyState
-          title="No tables match"
-          message={
-            filter === "all"
-              ? "Add tables in the Tables tab."
-              : "No tables in this state right now."
-          }
-        />
+    <>
+      <PageHeader
+        title="Orders"
+        subtitle="Accept, cook and serve, table by table."
+        actions={
+          <SegmentedLinks
+            label="Order views"
+            items={[
+              { to: "/orders", label: "Table view", icon: LayoutGrid, active: view === "floor" },
+              { to: "/orders/live", label: "Live orders", icon: ListOrdered, count: live, active: view === "live" },
+              { to: "/orders/history", label: "History", icon: History, active: view === "history" },
+            ]}
+          />
+        }
+      />
+      {view === "live" ? (
+        <LiveBoard images={images} />
+      ) : view === "history" ? (
+        <OrderHistory images={images} />
       ) : (
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
-          {filtered.map((t) => (
-            <TableTile
-              key={t.id}
-              table={t}
-              onClick={() => navigate(`/orders/${t.id}`)}
-            />
-          ))}
-        </div>
+        <FloorView tableId={tableId} images={images} />
       )}
-    </div>
+    </>
   );
 }
 
-function TableTile({ table, onClick }) {
-  const s = table.session;
-  const needsAttention = s?.placed > 0;
-  const occupied = !!s;
+function FloorView({ tableId, images }) {
+  useNow(30000);
+  const navigate = useNavigate();
+  const xl = useMediaQuery("(min-width: 1280px)");
+  const q = useQuery({ queryKey: ["tables-overview"], queryFn: getTablesOverview, refetchInterval: 30000 });
+  const tables = q.data || [];
+  const selected = tableId ? tables.find((t) => t.id === tableId) : null;
+  const close = () => navigate("/orders");
+
+  const counts = { attention: 0, occupied: 0, free: 0, disabled: 0 };
+  for (const t of tables) counts[tableState(t)]++;
+
+  if (q.error) return <div className="panel"><ErrorState message={errorMessage(q.error)} onRetry={q.refetch} /></div>;
+
+  const floor = (
+    <section
+      className="relative rounded-[20px] border border-line bg-[#FAFAF7] p-3 sm:p-4 bg-[linear-gradient(#ECEBE4_1px,transparent_1px),linear-gradient(90deg,#ECEBE4_1px,transparent_1px)] [background-size:44px_44px] [background-position:-1px_-1px]"
+      aria-label="Floor plan"
+    >
+      <div className="mb-2 flex flex-wrap items-center gap-x-4 gap-y-1 px-1.5 pt-0.5">
+        {["attention", "occupied", "free", "disabled"].map((k) => (
+          <span key={k} className="flex items-center gap-1.5 text-meta text-ink-2">
+            <span className={`h-2 w-2 rounded-full ${DOT[k]}`} aria-hidden="true" />
+            {TABLE_STATE[k].label}
+            <span className="font-bold text-ink tnum">{q.isLoading ? "–" : counts[k]}</span>
+          </span>
+        ))}
+        <span className="ml-auto hidden text-cap text-ink-3 sm:inline">Tap a table to see its orders</span>
+      </div>
+      {q.isLoading ? (
+        <div className="grid grid-cols-[repeat(auto-fill,minmax(140px,1fr))] gap-2">
+          {Array.from({ length: 12 }, (_, i) => <div key={i} className="skeleton aspect-[160/128]" />)}
+        </div>
+      ) : !tables.length ? (
+        <EmptyState icon={Armchair} title="No tables yet" message="Add your tables in Tables, then print their QR codes." />
+      ) : (
+        <div className="grid grid-cols-2 min-[520px]:grid-cols-3 sm:grid-cols-[repeat(auto-fill,minmax(150px,1fr))] gap-1 sm:gap-2">
+          {tables.map((t) => (
+            <FloorTable key={t.id} table={t} selected={t.id === tableId} onSelect={() => navigate(t.id === tableId ? "/orders" : `/orders/${t.id}`)} />
+          ))}
+        </div>
+      )}
+    </section>
+  );
+
+  if (xl) {
+    return (
+      <div className="grid grid-cols-[minmax(0,1fr)_400px] items-start gap-4">
+        {floor}
+        <aside className="panel sticky top-6 h-[calc(100dvh-140px)] min-h-[520px] overflow-hidden" aria-label="Table orders">
+          {selected ? (
+            <TicketPanel key={selected.id} table={selected} images={images} onClose={close} />
+          ) : (
+            <div className="flex h-full flex-col items-center justify-center px-8 text-center">
+              <span className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-lemon-soft text-lemon-ink shadow-[inset_0_0_0_1px_#EEEAA6]">
+                <LayoutGrid size={20} />
+              </span>
+              <p className="mt-3 text-title font-bold">Pick a table</p>
+              <p className="mt-1 text-body text-ink-2">
+                {counts.attention > 0
+                  ? `${counts.attention} ${counts.attention === 1 ? "table has" : "tables have"} a new order. They're marked in orange.`
+                  : "Its orders, notes and total show here, with Accept and Free table."}
+              </p>
+            </div>
+          )}
+        </aside>
+      </div>
+    );
+  }
 
   return (
-    <button
-      onClick={onClick}
-      className={`card text-left transition-colors relative ${
-        needsAttention
-          ? "border-orange animate-pulse"
-          : occupied
-            ? "border-cobalt"
-            : "border-dashed border-line text-ink/40"
-      }`}
-    >
-      {needsAttention && (
-        <span className="absolute -top-2 -right-2 bg-orange text-white text-xs font-bold px-2 py-0.5 rounded-full">
-          {s.placed} new
-        </span>
-      )}
-      <p className="font-bold text-sm">{tableLabel(table.label)}</p>
-      {occupied ? (
-        <>
-          <p className="text-xs text-ink/50 mt-1">
-            {durationMin(s.openedAt)} · {s.orders} orders
-          </p>
-          <p className="text-xs font-semibold mt-0.5">{rupee(s.total)}</p>
-        </>
-      ) : (
-        <p className="text-xs mt-1">Free</p>
-      )}
-    </button>
+    <>
+      {floor}
+      <Drawer open={!!selected} onClose={close} title={selected ? `Orders at ${selected.label}` : ""} width={440} bare>
+        {selected && <TicketPanel key={selected.id} table={selected} images={images} onClose={close} />}
+      </Drawer>
+    </>
   );
 }

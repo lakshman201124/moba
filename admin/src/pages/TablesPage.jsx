@@ -1,289 +1,188 @@
+import { useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { useNavigate } from "react-router-dom";
-import {
-  getTablesOverview,
-  createTable,
-  createTableRange,
-  updateTable,
-  reorderTables,
-} from "../services/tableService";
+import toast from "react-hot-toast";
+import { Plus, QrCode, MoreHorizontal, Pencil, ArrowLeft, ArrowRight, Power, Armchair, Printer } from "lucide-react";
+import { getTablesOverview, updateTable, reorderTables, getTable } from "../services/tableService";
 import { queryClient } from "../lib/queryClient";
 import { errorMessage } from "../lib/errors";
-import { tableLabel, durationMin } from "../lib/format";
-import { useState } from "react";
-import Skeleton from "../components/ui/Skeleton";
+import { isUuid } from "../lib/ids";
+import { tableShort, durationMin, plural } from "../lib/format";
+import { useMediaQuery, useNow } from "../hooks/useNow";
+import { tableState, TableChip } from "../components/ui/StatusChip";
+import PageHeader from "../components/ui/PageHeader";
 import ErrorState from "../components/ui/ErrorState";
 import EmptyState from "../components/ui/EmptyState";
-import Modal from "../components/ui/Modal";
-import Switch from "../components/ui/Switch";
-import toast from "react-hot-toast";
-import { Plus, ChevronUp, ChevronDown } from "lucide-react";
+import Drawer from "../components/ui/Drawer";
+import Menu, { MenuItem, MenuSeparator } from "../components/ui/Menu";
+import TableDetail, { printTableCard } from "../components/tables/TableDetail";
+import AddTableModal from "../components/tables/AddTableModal";
+import { TILE } from "../components/dashboard/TableStatusGrid";
+import NotFoundPage from "./NotFoundPage";
 
 export default function TablesPage() {
+  useNow(30000);
+  const { tableId } = useParams();
   const navigate = useNavigate();
+  const xl = useMediaQuery("(min-width: 1280px)");
   const [addOpen, setAddOpen] = useState(false);
 
-  const { data: tables, isLoading, error, refetch } = useQuery({
-    queryKey: ["tables-overview"],
-    queryFn: getTablesOverview,
-  });
+  const q = useQuery({ queryKey: ["tables-overview"], queryFn: getTablesOverview, refetchInterval: 60000 });
+  const tables = q.data || [];
+  const selected = tableId ? tables.find((t) => t.id === tableId) : null;
 
-  const toggleActive = useMutation({
-    mutationFn: ({ id, active }) => updateTable(id, { is_active: active }),
-    onSuccess: () =>
-      queryClient.invalidateQueries({ queryKey: ["tables-overview"] }),
-    onError: (err) => toast.error(errorMessage(err)),
+  const refresh = () => queryClient.invalidateQueries({ queryKey: ["tables-overview"] });
+  const toggle = useMutation({
+    mutationFn: ({ id, on }) => updateTable(id, { is_active: on }),
+    onSuccess: (_d, { on, label }) => {
+      refresh();
+      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+      toast.success(on ? `${label} takes orders again.` : `${label} is turned off.`);
+    },
+    onError: (e) => toast.error(errorMessage(e)),
   });
-
   const reorder = useMutation({
     mutationFn: (ids) => reorderTables(ids),
-    onSuccess: () =>
-      queryClient.invalidateQueries({ queryKey: ["tables-overview"] }),
-    onError: (err) => toast.error(errorMessage(err)),
+    onMutate: async (ids) => {
+      await queryClient.cancelQueries({ queryKey: ["tables-overview"] });
+      const before = queryClient.getQueryData(["tables-overview"]);
+      queryClient.setQueryData(["tables-overview"], ids.map((id, n) => ({ ...before.find((t) => t.id === id), sortOrder: n + 1 })));
+      return { before };
+    },
+    onError: (e, _ids, ctx) => {
+      if (ctx?.before) queryClient.setQueryData(["tables-overview"], ctx.before);
+      toast.error(errorMessage(e));
+    },
+    onSettled: refresh,
   });
 
-  function moveTable(idx, dir) {
+  function move(i, d) {
     const ids = tables.map((t) => t.id);
-    const [id] = ids.splice(idx, 1);
-    ids.splice(idx + dir, 0, id);
+    const [id] = ids.splice(i, 1);
+    ids.splice(i + d, 0, id);
     reorder.mutate(ids);
   }
 
-  if (isLoading)
-    return (
-      <div className="p-4 md:p-6 max-w-3xl mx-auto">
-        <Skeleton className="h-8 w-40 mb-4" />
-        <Skeleton className="h-16" count={6} />
-      </div>
-    );
-  if (error) return <ErrorState message={error.message} onRetry={refetch} />;
+  if (tableId && !isUuid(tableId)) return <NotFoundPage message="That table doesn't exist." backTo="/tables" backLabel="All tables" />;
 
-  return (
-    <div className="p-4 md:p-6 max-w-3xl mx-auto">
-      <div className="flex items-center justify-between mb-4">
-        <h1 className="font-display text-2xl">Tables</h1>
-        <button onClick={() => setAddOpen(true)} className="btn-primary text-sm">
-          <Plus size={16} /> Add table
-        </button>
-      </div>
+  const active = tables.filter((t) => t.isActive).length;
+  const seats = tables.filter((t) => t.isActive).reduce((a, t) => a + (t.seats || 0), 0);
+  const close = () => navigate("/tables");
 
-      {!tables?.length ? (
-        <EmptyState
-          title="No tables yet"
-          message="Add your tables to print their QR codes."
-          action="Add tables"
-          onAction={() => setAddOpen(true)}
-        />
-      ) : (
-        <div className="space-y-2">
-          {tables.map((t, i) => (
-            <div
-              key={t.id}
-              className="card flex items-center gap-3 cursor-pointer hover:border-cobalt transition-colors"
-              onClick={() => navigate(`/tables/${t.id}`)}
-            >
-              <div className="flex-1 min-w-0">
-                <p className="font-bold text-sm">{tableLabel(t.label)}</p>
-                <p className="text-xs text-ink/50">
-                  {t.seats ? `${t.seats} seats` : ""}
-                  {t.session
-                    ? ` · Occupied for ${durationMin(t.session.openedAt)}`
-                    : " · Free"}
-                </p>
-              </div>
-
-              <Switch
-                checked={t.isActive}
-                onChange={(on) => {
-                  if (t.session) {
-                    toast.error("Free the table first.");
-                    return;
-                  }
-                  toggleActive.mutate({ id: t.id, active: on });
-                }}
-                disabled={!!t.session || toggleActive.isPending}
-                label=""
-              />
-
-              <div
-                className="flex flex-col gap-0.5"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <button
-                  onClick={() => moveTable(i, -1)}
-                  disabled={i === 0 || reorder.isPending}
-                  className="p-1 rounded hover:bg-ink/6 disabled:opacity-20"
-                  aria-label="Move up"
+  const grid = q.error ? (
+    <div className="panel"><ErrorState message={errorMessage(q.error)} onRetry={q.refetch} /></div>
+  ) : q.isLoading ? (
+    <div className="grid grid-cols-[repeat(auto-fill,minmax(168px,1fr))] gap-3">
+      {Array.from({ length: 12 }, (_, i) => <div key={i} className="skeleton h-[138px] !rounded-[16px]" />)}
+    </div>
+  ) : !tables.length ? (
+    <div className="panel">
+      <EmptyState icon={Armchair} title="No tables yet" message="Add your tables to print a QR code for each one. Guests scan it to order from their seat." action="Add tables" actionIcon={Plus} onAction={() => setAddOpen(true)} />
+    </div>
+  ) : (
+    <div className="grid grid-cols-2 sm:grid-cols-[repeat(auto-fill,minmax(168px,1fr))] gap-2.5 sm:gap-3">
+      {tables.map((t, i) => {
+        const s = tableState(t);
+        const label = tableShort(t.label);
+        const isSel = t.id === tableId;
+        return (
+          <div
+            key={t.id}
+            className={`group relative rounded-[16px] border bg-surface p-3.5 shadow-panel transition-[box-shadow,border-color] ${
+              isSel ? "!bg-lemon-soft border-[#E2DB55] shadow-[0_0_0_2px_#E2DB55]" : "border-line hover:border-line-strong hover:shadow-raise"
+            } ${!t.isActive ? "bg-sunken" : ""}`}
+          >
+            <button
+              onClick={() => navigate(isSel ? "/tables" : `/tables/${t.id}`)}
+              className="absolute inset-0 rounded-[16px]"
+              aria-label={`${label} details`}
+            />
+            <div className="pointer-events-none relative flex items-start justify-between gap-2">
+              <span className={`inline-flex h-10 min-w-12 items-center justify-center rounded-[10px] border px-2.5 text-title font-extrabold ${TILE[s]}`}>
+                {label}
+              </span>
+              <span className="pointer-events-auto">
+                <Menu
+                  label={`${label} actions`}
+                  width={208}
+                  trigger={(p) => (
+                    <button {...p} className="btn btn-ghost btn-icon btn-sm -mr-1.5 -mt-1">
+                      <MoreHorizontal size={18} />
+                    </button>
+                  )}
                 >
-                  <ChevronUp size={14} />
-                </button>
-                <button
-                  onClick={() => moveTable(i, 1)}
-                  disabled={i === tables.length - 1 || reorder.isPending}
-                  className="p-1 rounded hover:bg-ink/6 disabled:opacity-20"
-                  aria-label="Move down"
-                >
-                  <ChevronDown size={14} />
-                </button>
-              </div>
+                  <MenuItem icon={Pencil} onSelect={() => navigate(`/tables/${t.id}`)}>Edit details</MenuItem>
+                  <MenuItem
+                    icon={Printer}
+                    onSelect={() => getTable(t.id).then(printTableCard).catch(() => toast.error("Couldn't prepare the card."))}
+                  >
+                    Print table card
+                  </MenuItem>
+                  <MenuItem icon={ArrowLeft} disabled={i === 0 || reorder.isPending} onSelect={() => move(i, -1)}>Move earlier</MenuItem>
+                  <MenuItem icon={ArrowRight} disabled={i === tables.length - 1 || reorder.isPending} onSelect={() => move(i, 1)}>Move later</MenuItem>
+                  <MenuSeparator />
+                  <MenuItem
+                    icon={Power}
+                    disabled={!!t.session}
+                    hint={t.session ? "Seated" : undefined}
+                    onSelect={() => toggle.mutate({ id: t.id, on: !t.isActive, label })}
+                  >
+                    {t.isActive ? "Turn off" : "Turn on"}
+                  </MenuItem>
+                </Menu>
+              </span>
             </div>
-          ))}
-        </div>
-      )}
-
-      <AddTableModal
-        open={addOpen}
-        onClose={() => setAddOpen(false)}
-      />
+            <p className="pointer-events-none relative mt-3 text-meta text-ink-2">
+              {t.seats ? plural(t.seats, "seat", "seats") : "Seats not set"}
+              {t.session && <span className="text-ink-3"> · {durationMin(t.session.openedAt)}</span>}
+            </p>
+            <div className="pointer-events-none relative mt-2.5 flex items-center justify-between gap-2">
+              <TableChip state={s} />
+              <QrCode size={18} className="text-ink-3 group-hover:text-ink" aria-hidden="true" />
+            </div>
+          </div>
+        );
+      })}
+      <button
+        onClick={() => setAddOpen(true)}
+        className="flex min-h-[124px] flex-col items-center justify-center gap-1.5 rounded-[16px] border border-dashed border-line-strong text-meta font-semibold text-ink-2 transition-colors hover:border-ink-3 hover:bg-surface hover:text-ink"
+      >
+        <Plus size={18} /> Add table
+      </button>
     </div>
   );
-}
-
-function AddTableModal({ open, onClose }) {
-  const [mode, setMode] = useState("one");
-  const [label, setLabel] = useState("");
-  const [seats, setSeats] = useState("");
-  const [from, setFrom] = useState("");
-  const [to, setTo] = useState("");
-  const [prefix, setPrefix] = useState("");
-  const [loading, setLoading] = useState(false);
-
-  async function handleOne(e) {
-    e.preventDefault();
-    setLoading(true);
-    try {
-      await createTable(label, seats ? Number(seats) : null);
-      queryClient.invalidateQueries({ queryKey: ["tables-overview"] });
-      toast.success(`${tableLabel(label)} added.`);
-      onClose();
-      setLabel("");
-      setSeats("");
-    } catch (err) {
-      toast.error(errorMessage(err));
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function handleRange(e) {
-    e.preventDefault();
-    const f = Number(from);
-    const t = Number(to);
-    if (f > t || t - f > 49) {
-      toast.error("Range must be 1–50 tables.");
-      return;
-    }
-    setLoading(true);
-    try {
-      await createTableRange(f, t, prefix);
-      queryClient.invalidateQueries({ queryKey: ["tables-overview"] });
-      toast.success(`${t - f + 1} tables added.`);
-      onClose();
-      setFrom("");
-      setTo("");
-      setPrefix("");
-    } catch (err) {
-      toast.error(errorMessage(err));
-    } finally {
-      setLoading(false);
-    }
-  }
 
   return (
-    <Modal open={open} onClose={onClose} title="Add table">
-      <div className="flex gap-2 mb-4">
-        <button
-          onClick={() => setMode("one")}
-          className={`px-4 py-2 rounded-full text-sm font-semibold border-2 ${
-            mode === "one"
-              ? "border-cobalt bg-cobalt text-white"
-              : "border-line"
-          }`}
-        >
-          One table
-        </button>
-        <button
-          onClick={() => setMode("range")}
-          className={`px-4 py-2 rounded-full text-sm font-semibold border-2 ${
-            mode === "range"
-              ? "border-cobalt bg-cobalt text-white"
-              : "border-line"
-          }`}
-        >
-          A range
-        </button>
-      </div>
+    <>
+      <PageHeader
+        title="Tables"
+        subtitle={q.data ? `${plural(active, "table", "tables")} taking orders · ${seats} seats. Each has its own QR code.` : "Your tables and their QR codes."}
+        actions={
+          <button onClick={() => setAddOpen(true)} className="btn btn-primary">
+            <Plus size={16} /> Add table
+          </button>
+        }
+      />
 
-      {mode === "one" ? (
-        <form onSubmit={handleOne}>
-          <label className="block mb-3">
-            <span className="text-sm font-semibold">Label</span>
-            <input
-              required
-              value={label}
-              onChange={(e) => setLabel(e.target.value)}
-              maxLength={20}
-              className="mt-1 block w-full rounded-lg border-2 border-line bg-cream px-3 py-2.5 text-sm focus:border-cobalt focus:outline-none"
-              placeholder="e.g. 1, T5, Bar Left"
-            />
-          </label>
-          <label className="block mb-4">
-            <span className="text-sm font-semibold">Seats (optional)</span>
-            <input
-              type="number"
-              min={1}
-              max={50}
-              value={seats}
-              onChange={(e) => setSeats(e.target.value)}
-              className="mt-1 block w-full rounded-lg border-2 border-line bg-cream px-3 py-2.5 text-sm focus:border-cobalt focus:outline-none"
-            />
-          </label>
-          <button type="submit" disabled={loading} className="btn-primary w-full">
-            {loading ? "Adding…" : "Add table"}
-          </button>
-        </form>
+      {xl ? (
+        <div className={`grid items-start gap-4 ${selected ? "grid-cols-[minmax(0,1fr)_400px]" : "grid-cols-1"}`}>
+          {grid}
+          {selected && (
+            <aside className="panel sticky top-6 h-[calc(100dvh-140px)] min-h-[560px] overflow-hidden animate-slide-in" aria-label={`${tableShort(selected.label)} details`}>
+              <TableDetail key={selected.id} overview={selected} onClose={close} />
+            </aside>
+          )}
+        </div>
       ) : (
-        <form onSubmit={handleRange}>
-          <div className="grid grid-cols-2 gap-3 mb-3">
-            <label className="block">
-              <span className="text-sm font-semibold">From</span>
-              <input
-                type="number"
-                required
-                min={1}
-                value={from}
-                onChange={(e) => setFrom(e.target.value)}
-                className="mt-1 block w-full rounded-lg border-2 border-line bg-cream px-3 py-2.5 text-sm focus:border-cobalt focus:outline-none"
-              />
-            </label>
-            <label className="block">
-              <span className="text-sm font-semibold">To</span>
-              <input
-                type="number"
-                required
-                min={1}
-                value={to}
-                onChange={(e) => setTo(e.target.value)}
-                className="mt-1 block w-full rounded-lg border-2 border-line bg-cream px-3 py-2.5 text-sm focus:border-cobalt focus:outline-none"
-              />
-            </label>
-          </div>
-          <label className="block mb-4">
-            <span className="text-sm font-semibold">
-              Prefix (optional, e.g. "T")
-            </span>
-            <input
-              value={prefix}
-              onChange={(e) => setPrefix(e.target.value)}
-              maxLength={10}
-              className="mt-1 block w-full rounded-lg border-2 border-line bg-cream px-3 py-2.5 text-sm focus:border-cobalt focus:outline-none"
-            />
-          </label>
-          <button type="submit" disabled={loading} className="btn-primary w-full">
-            {loading ? "Adding…" : "Add tables"}
-          </button>
-        </form>
+        <>
+          {grid}
+          <Drawer open={!!selected} onClose={close} title={selected ? `${tableShort(selected.label)} details` : ""} width={440} bare>
+            {selected && <TableDetail key={selected.id} overview={selected} onClose={close} />}
+          </Drawer>
+        </>
       )}
-    </Modal>
+
+      <AddTableModal open={addOpen} onClose={() => setAddOpen(false)} onAdded={(row) => row?.id && navigate(`/tables/${row.id}`)} />
+    </>
   );
 }

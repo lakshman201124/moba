@@ -32,5 +32,17 @@ export default defineConfig(({ mode }) => {
     plugins: [react(), tailwindcss()],
     envPrefix: ENV_PREFIX,
     server: { port: 5174 },
+    build: {
+      rollupOptions: {
+        output: {
+          // Libraries change less often than the app, so they cache separately.
+          manualChunks: {
+            react: ["react", "react-dom", "react-router-dom"],
+            supabase: ["@supabase/supabase-js"],
+            data: ["@tanstack/react-query", "react-hook-form", "zod"],
+          },
+        },
+      },
+    },
   };
 });

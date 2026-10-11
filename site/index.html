@@ -203,6 +203,7 @@ section[id]{scroll-margin-top:76px}
 .cd-cheese{width:100%;height:100%;pointer-events:none}
 .cd-cheese i{position:absolute;left:0;top:0;background-repeat:no-repeat;transform-origin:47.8% 0;will-change:transform}
 .cd-bot{cursor:grab;touch-action:none;transform-origin:50% 0}
+.cdsec{overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
 .cd-bot.dragging{cursor:grabbing}
 .cd-grab{position:absolute;left:0;bottom:0;width:1px;height:1px;opacity:0;border:0;padding:0}
 .cdrig:has(.cd-grab:focus-visible) .cd-bot{outline:3px dashed var(--blue);outline-offset:4px;border-radius:18px}
@@ -260,10 +261,6 @@ footer .cols a{display:block;color:var(--ink);text-decoration:none;padding:9px 0
 .footstrip .track{display:inline-flex;gap:22px;animation:slide 32s linear infinite;font:400 16px/1 "Bagel Fat One",sans-serif}
 .legal{background:var(--blue);color:var(--cream);text-align:center;font-size:14px;padding:4px 16px 18px;letter-spacing:.04em}
 
-/* sticky view menu */
-.sticky{position:fixed;left:50%;bottom:calc(18px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:45;transition:opacity .3s,transform .3s}
-@media (hover:hover){.sticky:hover{transform:translateX(-50%) translate(-2px,-2px)}}
-.sticky.hide{opacity:0;transform:translateX(-50%) translateY(20px);pointer-events:none}
 
 @media (min-width:760px){
   .wrap{max-width:1080px;padding:0 40px}
@@ -297,7 +294,6 @@ footer .cols a{display:block;color:var(--ink);text-decoration:none;padding:9px 0
   <div class="wrap row">
     <a class="logo" href="#" aria-label="MOBA 모바 Korean Resto-Cafe"><img src="assets/logo-mark.webp" width="420" height="432" alt=""></a>
     <div class="acts">
-      <a data-bubble href="menu.html" class="pill">View menu</a>
       <button class="iconbtn" aria-label="Open menu" aria-expanded="false" aria-controls="navpanel"><i></i></button>
     </div>
   </div>
@@ -321,7 +317,6 @@ footer .cols a{display:block;color:var(--ink);text-decoration:none;padding:9px 0
         <h1 class="h1 d loud">Gather<br>for food</h1>
         <p class="sub">Korean comfort, made in our kitchen every day. Scan, sit, slurp. No app, no wait.</p>
         <div class="heroctas">
-          <a data-bubble href="menu.html" class="pill">View menu ↓</a>
           <a href="#story" class="pill ghost">Our story</a>
         </div>
         <div class="slurp-hint"><svg viewBox="0 0 36 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M2 4c10-2 21 2 25 15M27 19l-7-2M27 19l2-7"/></svg>scroll to slurp</div>
@@ -385,25 +380,9 @@ footer .cols a{display:block;color:var(--ink);text-decoration:none;padding:9px 0
   </div>
 </div>
 <i class="nd" data-x=".14" data-xd=".08" data-dy="-26"></i>
-
-<!-- MENU CTA (orange) -->
-<section class="sec bg-orange menu-sec" id="menu">
-  <div class="bgword d" aria-hidden="true">메뉴</div>
-  <div class="wrap">
-    <i class="nd" data-x=".05" data-xd=".05"></i>
-    <div class="menucta over">
-      <div class="burst" aria-hidden="true"><svg viewBox="0 0 100 100"><path d="M50 2l9 15 17-6 1 18 18 3-8 16 12 13-16 8 4 18-18-1-6 17-14-11-14 11-6-17-18 1 4-18-16-8 12-13-8-16 18-3 1-18 17 6z" fill="var(--sun)" stroke="var(--blue)" stroke-width="3.5" stroke-linejoin="round"/></svg><span>~123<br>dishes!</span></div>
-      <div class="eyebrow">직접 만듭니다 · Made here, every day</div>
-      <h2 class="bigword d loud">The menu</h2>
-      <span class="hang">메뉴</span>
-      <p>12 categories, every dish made in our kitchen. Pick your plate.</p>
-      <a data-bubble href="menu.html" class="pill">Open the menu →</a>
-      <div class="stats"><span class="chip c-lemon">12 categories</span><span class="chip c-sky">Mild · Hot · Very hot</span><span class="chip c-pink">Prices in ₹</span></div>
-    </div>
-    <i class="nd" data-x=".05" data-xd=".05"></i>
-  </div>
-</section>
-<svg class="wave" viewBox="0 0 400 40" preserveAspectRatio="none" aria-hidden="true" style="background:var(--sky)"><path d="M0 0h400v14c-33 0-33 18-67 18s-33-18-66-18-34 18-67 18-33-18-67-18-33 18-66 18S34 14 0 14z" fill="var(--orange)"/></svg>
+<i class="nd" data-x=".05" data-xd=".05"></i>
+<i class="nd" data-x=".05" data-xd=".05"></i>
+<svg class="wave" viewBox="0 0 400 40" preserveAspectRatio="none" aria-hidden="true" style="background:var(--sky)"><path d="M0 0h400v14c-33 0-33 18-67 18s-33-18-66-18-34 18-67 18-33-18-67-18-33 18-66 18S34 14 0 14z" fill="var(--blue)"/></svg>
 
 <!-- RAMEYON POT (sky) -->
 <section class="sec bg-sky sig" id="story">
@@ -441,27 +420,25 @@ footer .cols a{display:block;color:var(--ink);text-decoration:none;padding:9px 0
     </div>
   </div>
 </section>
-<svg class="wave" viewBox="0 0 400 40" preserveAspectRatio="none" aria-hidden="true" style="background:var(--lemon)"><path d="M0 0h400v14c-33 0-33 18-67 18s-33-18-66-18-34 18-67 18-33-18-67-18-33 18-66 18S34 14 0 14z" fill="var(--sky)"/></svg>
+<svg class="wave" viewBox="0 0 400 40" preserveAspectRatio="none" aria-hidden="true" style="background:var(--orange)"><path d="M0 0h400v14c-33 0-33 18-67 18s-33-18-66-18-34 18-67 18-33-18-67-18-33 18-66 18S34 14 0 14z" fill="var(--sky)"/></svg>
 
-<!-- REVIEWS (lemon) -->
-<section class="sec bg-lemon">
+<!-- MENU CTA (orange) -->
+<section class="sec bg-orange menu-sec" id="menu">
+  <div class="bgword d" aria-hidden="true">메뉴</div>
   <div class="wrap">
-    <div class="sechead2"><div class="eyebrow">from real foodies</div><h2 class="d loud">Real talk from<br>real foodies</h2></div>
-    <div class="revs">
-      <div class="rev"><div class="stars">★★★★★</div><q>Real review goes here, pulled from Google or Instagram.</q><div class="by">Name · Google</div></div>
-      <div class="rev"><div class="stars">★★★★★</div><q>Second review. Short and punchy reads best on a sticker.</q><div class="by">Name · Instagram</div></div>
-      <div class="rev"><div class="stars">★★★★★</div><q>Third review. Keep each one under about twenty words.</q><div class="by">Name · Google</div></div>
+    <div class="menucta over">
+      <div class="burst" aria-hidden="true"><svg viewBox="0 0 100 100"><path d="M50 2l9 15 17-6 1 18 18 3-8 16 12 13-16 8 4 18-18-1-6 17-14-11-14 11-6-17-18 1 4-18-16-8 12-13-8-16 18-3 1-18 17 6z" fill="var(--sun)" stroke="var(--blue)" stroke-width="3.5" stroke-linejoin="round"/></svg><span>~123<br>dishes!</span></div>
+      <div class="eyebrow">직접 만듭니다 · Made here, every day</div>
+      <h2 class="bigword d loud">The menu</h2>
+      <span class="hang">메뉴</span>
+      <p>12 categories, every dish made in our kitchen. Pick your plate.</p>
+      <a data-bubble href="menu.html" class="pill">Open the menu →</a>
+      <div class="stats"><span class="chip c-lemon">12 categories</span><span class="chip c-sky">Mild · Hot · Very hot</span><span class="chip c-pink">Prices in ₹</span></div>
+      <p style="margin-top:18px;font-size:1.1rem;font-style:italic;opacity:.85">Psst… a corn dog is waiting for you below ↓</p>
     </div>
   </div>
 </section>
-
-<!-- MARQUEE 2 (orange) -->
-<div class="marq m-orange mrev" aria-hidden="true">
-  <div class="track">
-    <span class="it">Fresh off the wok</span><span class="it">모바 town</span><span class="it">New drop</span><span class="it">치즈 쭉~</span>
-    <span class="it">Fresh off the wok</span><span class="it">모바 town</span><span class="it">New drop</span><span class="it">치즈 쭉~</span>
-  </div>
-</div>
+<svg class="wave" viewBox="0 0 400 40" preserveAspectRatio="none" aria-hidden="true" style="background:var(--cream)"><path d="M0 0h400v14c-33 0-33 18-67 18s-33-18-66-18-34 18-67 18-33-18-67-18-33 18-66 18S34 14 0 14z" fill="var(--orange)"/></svg>
 
 <!-- CORN DOGG: draggable cheese pull (left) + card (right) -->
 <section class="sec bg-cream cdsec">
@@ -536,7 +513,6 @@ footer .cols a{display:block;color:var(--ink);text-decoration:none;padding:9px 0
   <div class="legal">ALL PRICES IN INR · TAXES EXTRA · 맛있게 드세요</div>
 </footer>
 
-<a data-bubble href="menu.html" class="pill sticky" id="sticky">View menu ↓</a>
 
 <div id="noodleLayer" aria-hidden="true"></div>
 
@@ -544,11 +520,6 @@ footer .cols a{display:block;color:var(--ink);text-decoration:none;padding:9px 0
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/Draggable.min.js"></script>
 <script>
-// sticky View Menu hides once the menu CTA or the footer is on screen
-const sticky=document.getElementById('sticky'), menu=document.getElementById('menu'), foot=document.querySelector('footer');
-addEventListener('scroll',()=>{const r=menu.getBoundingClientRect();
-  sticky.classList.toggle('hide', r.top<innerHeight*.6 && r.bottom>0 || scrollY<200 || foot.getBoundingClientRect().top<innerHeight);},{passive:true});
-sticky.classList.add('hide');
 
 const navBtn=document.querySelector('.iconbtn'), nav=document.getElementById('navpanel');
 const setNav=open=>{nav.hidden=!open;navBtn.setAttribute('aria-expanded',open);navBtn.setAttribute('aria-label',open?'Close menu':'Open menu');};
@@ -683,7 +654,7 @@ addEventListener('keydown',e=>{if(e.key==='Escape'&&!nav.hidden){setNav(false);n
   const W=450, H=1535, CX=566, CY=162;                        // upright crop of the rotated source
   const A=x=>330+.235*(x-40);                                 // bite edge of the top chunk
   const B=x=>575+.16*(x-50);                                  // top edge of the bottom half
-  const TOP_H=440, BOT_Y=555, BAND_Y=300, BAND_H=350, N=36;   // layer extents (crop px)
+  const TOP_H=440, BOT_Y=555, BAND_Y=300, BAND_H=350, N=matchMedia('(max-width:600px)').matches?18:36;
   const CM=20/H;                                              // the whole corn dogg is ~20cm long
   const meter=document.getElementById('cdmeter'), meterB=meter.querySelector('b'),
         cue=document.getElementById('cdcue'), hand=document.getElementById('cdhand'),
@@ -692,7 +663,7 @@ addEventListener('keydown',e=>{if(e.key==='Escape'&&!nav.hidden){setNav(false);n
   let top,bot,wrap,strips=[],f=1,ready=false,dragging=false,visible=true,ret=null,cueTl=null,cueCall=null;
   let wob=0,wobV=0,pdx=0,bounce=0,bounceV=0,pull=0,pullT=0,meterOn=false;
   const demo={v:0};                                           // 0..1 tug played by the hand
-  const demoPx=()=>rig.clientHeight*.1, scrollPx=()=>rig.clientHeight*.07;
+  const demoPx=()=>rig.clientHeight*.1, scrollPx=()=>rig.clientHeight*.12;
   let best=0; try{best=+localStorage.getItem('mobaCheeseBest')||0;}catch(e){}
   const showBest=()=>{rec.querySelector('b').textContent=Math.round(best);};
   showBest();
@@ -808,12 +779,12 @@ addEventListener('keydown',e=>{if(e.key==='Escape'&&!nav.hidden){setNav(false);n
       gsap.to(c,{opacity:0,duration:.25,delay:dur-.25});
     }
   }
-  function bounds(){                                          // the stick tip may travel into the footer
+  function bounds(){
     const r=bot.getBoundingClientRect(), ft=document.querySelector('footer');
     const tip=r.bottom+scrollY-gsap.getProperty(bot,'y');
-    const maxY=ft?ft.getBoundingClientRect().top+scrollY+ft.offsetHeight*.45-tip:innerHeight;
-    const sx=rig.clientWidth*.7;
-    return {minX:-sx,maxX:sx,minY:-4,maxY:Math.max(80,maxY)};
+    const maxY=ft?ft.getBoundingClientRect().top+scrollY-tip:innerHeight;
+    const sx=rig.clientWidth*.9;
+    return {minX:-sx,maxX:sx,minY:-4,maxY:Math.max(120,maxY)};
   }
   function grabStart(){                                       // shared by pointer and keyboard
     if(ret) ret.kill(); dragging=true; hideCue();
@@ -832,22 +803,23 @@ addEventListener('keydown',e=>{if(e.key==='Escape'&&!nav.hidden){setNav(false);n
     if(ret) ret.kill();
     // elastic snap-back; overshoot past rest is damped so the halves bump instead of crashing together
     const p={v:1};
-    ret=gsap.to(p,{v:0,duration:reduce?.35:1.1+clamp(dy/1500,0,.8),ease:reduce?'power2.out':'elastic.out(1,0.32)',
+    ret=gsap.to(p,{v:0,duration:reduce?.35:.9+clamp(dy/1500,0,.6),ease:reduce?'power2.out':'elastic.out(1,0.38)',
       onUpdate(){gsap.set(bot,{x:dx*p.v,y:p.v>=0?dy*p.v:Math.max(-16,dy*p.v*.25)});}});
     showCue(3.5);
   }
 
   function start(){
     gsap.registerPlugin(Draggable,ScrollTrigger);
-    Draggable.create(bot,{type:'x,y',bounds:bounds(),autoScroll:1.2,edgeResistance:.85,zIndexBoost:false,
+    Draggable.create(bot,{type:'x,y',bounds:bounds(),autoScroll:3,edgeResistance:.55,zIndexBoost:false,
       onPress(){grabStart(); this.update(); this.applyBounds(bounds()); bot.classList.add('dragging'); crumbs();},
+      onDrag(){this.applyBounds(bounds());},
       onRelease(){bot.classList.remove('dragging'); release();}});
 
     // scrolling through the section pulls the halves apart (like the old cheese sticks);
     // scroll speed gives the cheese a gooey bounce
-    const st=ScrollTrigger.create({trigger:rig,start:'top 85%',end:'center 35%',
+    const st=ScrollTrigger.create({trigger:rig,start:'top 90%',end:'center 30%',
       onUpdate(s){pullT=reduce?0:gsap.parseEase('power2.inOut')(s.progress)*scrollPx();
-        if(!reduce){const v=clamp(s.getVelocity()/1400,-4,4); bounceV+=v*.5; wobV+=v*.3;}},
+        if(!reduce){const v=clamp(s.getVelocity()/1800,-3,3); bounceV+=v*.35; wobV+=v*.2;}},
       onRefresh(s){pullT=reduce?0:gsap.parseEase('power2.inOut')(s.progress)*scrollPx();}});
     pullT=pull=reduce?0:gsap.parseEase('power2.inOut')(st.progress)*scrollPx();
 
@@ -855,10 +827,10 @@ addEventListener('keydown',e=>{if(e.key==='Escape'&&!nav.hidden){setNav(false);n
     new IntersectionObserver(es=>{visible=es[0].isIntersecting;}).observe(rig);
     gsap.ticker.add(()=>{
       if(!visible&&!dragging&&!(ret&&ret.isActive())) return;
-      if(!dragging) pull+=(pullT-pull)*.12;                   // the scroll pull holds still while you drag
-      bounceV+=-bounce*.08-bounceV*.12; bounce+=bounceV;
+      if(!dragging) pull+=(pullT-pull)*.18;
+      bounceV+=-bounce*.06-bounceV*.15; bounce+=bounceV;
       const dx=gsap.getProperty(bot,'x'), v=dx-pdx; pdx=dx;
-      wobV+=-v*.22-wob*.09-wobV*.14;                          // sideways jiggle from sideways motion
+      wobV+=-v*.18-wob*.07-wobV*.16;
       const lim=rig.clientWidth*.3; wob=clamp(wob+wobV,-lim,lim);
       sync();
     });

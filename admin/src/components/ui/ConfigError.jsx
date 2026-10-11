@@ -1,21 +1,27 @@
+import { enterDemo } from "../../lib/demo";
+
 export default function ConfigError() {
   return (
-    <div className="min-h-dvh bg-cream flex items-center justify-center p-6">
-      <div className="card w-full max-w-md">
-        <h1 className="font-display text-2xl mb-2">Setup needed</h1>
-        <p className="text-sm mb-3">
-          MOBA Admin can't find its Supabase settings. Add these to{" "}
-          <span className="font-bold">admin/.env</span> and restart the dev server (or set them in
-          your host's environment variables):
+    <div className="min-h-dvh bg-canvas flex items-center justify-center p-6">
+      <div className="panel w-full max-w-md p-6">
+        <img src="/logo-mark.webp" alt="MOBA" width="48" height="48" className="h-12 w-12 object-contain mb-4" />
+        <h1 className="text-h2 font-bold">Connect MOBA Admin to Supabase</h1>
+        <p className="text-body text-ink-2 mt-2">
+          The app can't find its Supabase settings. Add these to <span className="font-bold text-ink">admin/.env</span> and
+          restart the dev server, or set them in your host's environment variables:
         </p>
-        <pre className="rounded-lg border-2 border-line bg-paper p-3 text-xs overflow-x-auto mb-3">
+        <pre className="mt-4 rounded-[12px] border border-line bg-sunken p-3 text-cap overflow-x-auto">
 {`VITE_SUPABASE_URL=https://<project>.supabase.co
 VITE_SUPABASE_PUBLISHABLE_KEY=sb_publishable_…`}
         </pre>
-        <p className="text-xs text-ink/60">
-          Use the <span className="font-bold">publishable</span> key only. The secret key must never
-          go in this app.
+        <p className="text-meta text-ink-3 mt-3">
+          Use the <span className="font-bold text-ink">publishable</span> key only. The secret key must never go in this app.
         </p>
+        <div className="mt-5 border-t border-line pt-5">
+          <p className="text-body font-semibold">Just want to look around?</p>
+          <p className="text-meta text-ink-3 mt-0.5">The demo runs on sample data in this browser.</p>
+          <button onClick={enterDemo} className="btn btn-secondary mt-3 w-full">Explore the demo</button>
+        </div>
       </div>
     </div>
   );

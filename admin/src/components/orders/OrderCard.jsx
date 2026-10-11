@@ -1,160 +1,239 @@
+import { Fragment, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
+import toast from "react-hot-toast";
+import { Check, ChefHat, Undo2, X, MessageSquareText, MoreHorizontal } from "lucide-react";
 import { setOrderStatus } from "../../services/orderService";
-import { queryClient } from "../../lib/queryClient";
 import { errorMessage } from "../../lib/errors";
-import { formatTime, rupee } from "../../lib/format";
+import { formatTime, rupee, minutesSince, tableShort } from "../../lib/format";
 import StatusChip from "../ui/StatusChip";
 import DietMark from "../ui/DietMark";
-import toast from "react-hot-toast";
-import { useState } from "react";
+import DishThumb from "../ui/DishThumb";
 import Modal from "../ui/Modal";
+import Field from "../ui/Field";
+import Menu, { MenuItem, MenuSeparator } from "../ui/Menu";
+import { invalidateOrders } from "../dashboard/WaitingList";
 
+// The likely next step is a button; corrections and cancelling live in the "⋯" menu.
 const ACTIONS = {
-  placed: [
-    { to: "preparing", label: "Accept", primary: true },
-    { to: "served", label: "Served" },
-    { to: "cancelled", label: "Cancel", danger: true },
-  ],
-  preparing: [
-    { to: "served", label: "Served", primary: true },
-    { to: "cancelled", label: "Cancel", danger: true },
-  ],
-  served: [{ to: "preparing", label: "Undo" }],
-  cancelled: [{ to: "placed", label: "Undo" }],
+  placed: {
+    main: [
+      { to: "preparing", label: "Accept", icon: ChefHat, kind: "primary" },
+      { to: "served", label: "Served", icon: Check, kind: "secondary" },
+    ],
+    more: [{ to: "cancelled", label: "Cancel order", icon: X, danger: true }],
+  },
+  preparing: {
+    main: [{ to: "served", label: "Mark served", icon: Check, kind: "success" }],
+    more: [
+      { to: "placed", label: "Back to new", icon: Undo2 },
+      { to: "cancelled", label: "Cancel order", icon: X, danger: true },
+    ],
+  },
+  served: { main: [], more: [{ to: "preparing", label: "Back to cooking", icon: Undo2 }] },
+  cancelled: { main: [{ to: "placed", label: "Restore", icon: Undo2, kind: "ghost" }], more: [] },
 };
 
-export default function OrderCard({ order, tableId }) {
-  const [cancelModal, setCancelModal] = useState(false);
-  const [cancelReason, setCancelReason] = useState("");
+const BTN = {
+  primary: "btn-primary",
+  success: "btn-success",
+  secondary: "btn-secondary",
+  ghost: "btn-ghost",
+};
 
-  const mutation = useMutation({
-    mutationFn: ({ from, to, reason }) =>
-      setOrderStatus(order.id, from, to, reason),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["table-live", tableId] });
-      queryClient.invalidateQueries({ queryKey: ["tables-overview"] });
-      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
-      queryClient.invalidateQueries({ queryKey: ["waiting-orders"] });
+const DONE = {
+  preparing: (o) => `#${o.order_no} accepted. It's with the kitchen.`,
+  served: (o) => `#${o.order_no} marked served.`,
+  placed: (o) => `#${o.order_no} is back to new.`,
+  cancelled: (o) => `#${o.order_no} cancelled.`,
+};
+
+export function useOrderStatus(order) {
+  return useMutation({
+    mutationFn: ({ from, to, reason }) => setOrderStatus(order.id, from, to, reason),
+    onSuccess: (_r, v) => {
+      toast.success(DONE[v.to](order), { id: `status-${order.id}` });
+      invalidateOrders();
     },
-    onError: (err) => toast.error(errorMessage(err)),
+    onError: (err) => {
+      toast.error(errorMessage(err));
+      invalidateOrders();
+    },
   });
+}
 
-  function doAction(to) {
-    if (to === "cancelled") {
-      setCancelModal(true);
-      return;
-    }
+export function ItemLines({ items, images, dense }) {
+  return (
+    <ul className={dense ? "space-y-2" : "space-y-3"}>
+      {items.map((item) => (
+        <li key={item.id} className="flex gap-3">
+          {!dense && <DishThumb path={images?.[item.dish_id]} size={40} radius={10} />}
+          <div className="min-w-0 flex-1">
+            <div className="flex items-start gap-2">
+              <DietMark diet={item.diet} size={12} slot />
+              <p className={`flex-1 min-w-0 ${dense ? "text-meta" : "text-body"} font-semibold leading-snug -mt-px`}>
+                {dense && <span className="tnum text-ink-2">{item.qty}× </span>}
+                {item.dish_name}
+              </p>
+              {!dense && <span className="text-meta text-ink-2 tnum whitespace-nowrap">×{item.qty}</span>}
+              {!dense && <span className="w-16 text-right text-body font-semibold tnum whitespace-nowrap">{rupee(item.line_total)}</span>}
+            </div>
+            {(item.size_label || item.choices?.length > 0 || item.addons?.length > 0) && (
+              <p className="mt-0.5 text-cap text-ink-3 pl-[34px]">
+                {[
+                  item.size_label,
+                  ...(item.choices || []).map((c) => `${c.label}: ${(c.options || []).join(", ")}`),
+                  ...(item.addons || []).map((a) => `+ ${a.name}`),
+                ].filter(Boolean).join(" · ")}
+              </p>
+            )}
+            {item.note && (
+              <p className="mt-1.5 ml-[34px] inline-flex items-start gap-1.5 rounded-[8px] bg-lemon-soft px-2 py-1 text-cap font-semibold text-lemon-ink shadow-[inset_0_0_0_1px_#EEEAA6]">
+                <MessageSquareText size={13} className="mt-px shrink-0" />
+                {item.note}
+              </p>
+            )}
+          </div>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+export function CancelOrderModal({ open, onClose, order, onConfirm, loading }) {
+  const [reason, setReason] = useState("");
+  return (
+    <Modal
+      open={open}
+      onClose={onClose}
+      size="sm"
+      title={`Cancel order #${order.order_no}?`}
+      description="The guest's phone shows it as cancelled. You can restore it while the table is seated."
+      footer={
+        <>
+          <button onClick={onClose} className="btn btn-secondary">Keep order</button>
+          <button
+            onClick={() => {
+              onConfirm(reason.trim() || null);
+              setReason("");
+            }}
+            disabled={loading}
+            className="btn btn-danger"
+          >
+            Cancel order
+          </button>
+        </>
+      }
+    >
+      <Field label="Reason" optional hint="Only staff see this.">
+        {(p) => (
+          <textarea
+            {...p}
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+            maxLength={140}
+            rows={2}
+            className="textarea"
+            placeholder="e.g. ordered twice, wrong table"
+          />
+        )}
+      </Field>
+    </Modal>
+  );
+}
+
+// One order with its lines and the actions its status allows.
+export default function OrderCard({ order, images, variant = "panel", showTable }) {
+  const [cancelOpen, setCancelOpen] = useState(false);
+  const mutation = useOrderStatus(order);
+  const actions = ACTIONS[order.status] || { main: [], more: [] };
+  const items = order.order_items || [];
+  const age = minutesSince(order.created_at);
+  const dense = variant === "ticket";
+  // "flat" sits inside a panel: hairline-separated sections instead of cards in a card.
+  const flat = variant === "flat";
+  const pad = flat ? "px-5" : "px-3.5";
+  const late = (order.status === "placed" && age >= 8) || (order.status === "preparing" && age >= 25);
+
+  function act(to) {
+    if (to === "cancelled") return setCancelOpen(true);
     mutation.mutate({ from: order.status, to });
   }
 
-  function confirmCancel() {
-    mutation.mutate({
-      from: order.status,
-      to: "cancelled",
-      reason: cancelReason || null,
-    });
-    setCancelModal(false);
-    setCancelReason("");
-  }
-
-  const actions = ACTIONS[order.status] || [];
-  const items = order.order_items || [];
-
   return (
-    <div className="card">
-      <div className="flex items-center justify-between mb-3">
-        <div>
-          <span className="font-bold text-sm">#{order.order_no}</span>
-          <span className="text-ink/50 text-sm ml-2">
-            Guest {order.guest_no} · {formatTime(order.created_at)}
+    <article
+      className={`${flat ? (order.status === "placed" ? "bg-orange-soft/45" : "") : `rounded-[14px] border bg-surface ${order.status === "placed" ? "border-[#FFC9B4]" : "border-line"}`} ${
+        order.status === "cancelled" ? "opacity-70" : ""
+      }`}
+      aria-label={`Order ${order.order_no}`}
+    >
+      <header className={`flex items-center gap-2 ${pad} ${flat ? "pt-4" : "pt-3"} pb-2.5`}>
+        {showTable && (
+          <span className="inline-flex h-7 min-w-7 items-center justify-center rounded-[8px] bg-ink px-1.5 text-cap font-bold text-white">
+            {tableShort(order.table?.label)}
           </span>
-        </div>
-        <StatusChip status={order.status} />
-      </div>
-
-      <div className="space-y-2 mb-3">
-        {items.map((item) => (
-          <div key={item.id} className="flex gap-2 text-sm">
-            <DietMark diet={item.diet} size={12} />
-            <div className="flex-1 min-w-0">
-              <p className="font-semibold">
-                {item.qty > 1 && <span className="text-ink/50">{item.qty}× </span>}
-                {item.dish_name}
-              </p>
-              {item.size_label && (
-                <p className="text-xs text-ink/50">{item.size_label}</p>
-              )}
-              {item.choices?.map((c, i) => (
-                <p key={i} className="text-xs text-ink/50">
-                  {c.label}: {c.options?.join(", ")}
-                </p>
-              ))}
-              {item.addons?.map((a, i) => (
-                <p key={i} className="text-xs text-ink/50">+ {a.name}</p>
-              ))}
-              {item.note && (
-                <p className="text-xs bg-lemon px-2 py-0.5 rounded mt-0.5 inline-block">
-                  "{item.note}"
-                </p>
-              )}
-            </div>
-            <span className="text-xs text-ink/50 whitespace-nowrap">
-              {rupee(item.line_total)}
-            </span>
-          </div>
-        ))}
-      </div>
-
-      <div className="flex items-center justify-between pt-2 border-t-2 border-line">
-        <span className="font-bold">{rupee(order.total)}</span>
-        <div className="flex gap-2">
-          {actions.map((a) => (
-            <button
-              key={a.to}
-              onClick={() => doAction(a.to)}
-              disabled={mutation.isPending}
-              className={
-                a.primary
-                  ? "btn-primary text-sm py-2 px-4"
-                  : a.danger
-                    ? "btn-ghost text-sm py-2 px-3 text-nonveg"
-                    : "btn-ghost text-sm py-2 px-3"
-              }
-            >
-              {a.label}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <Modal
-        open={cancelModal}
-        onClose={() => setCancelModal(false)}
-        title="Cancel order"
-      >
-        <p className="text-sm text-ink/60 mb-3">
-          Optional reason (only staff see this):
+        )}
+        <p className="min-w-0 flex-1 truncate text-body font-bold">
+          <span className="tnum">#{order.order_no}</span>
+          <span className="font-medium text-ink-3"> · Guest {order.guest_no}</span>
         </p>
-        <textarea
-          value={cancelReason}
-          onChange={(e) => setCancelReason(e.target.value)}
-          maxLength={140}
-          rows={2}
-          className="w-full rounded-lg border-2 border-line bg-cream px-3 py-2 text-sm focus:border-cobalt focus:outline-none mb-4"
-          placeholder="e.g. ghost order, wrong table"
-        />
-        <div className="flex gap-3 justify-end">
+        <span className={`text-cap tnum ${late ? "font-bold text-orange-ink" : "text-ink-3"}`} title={formatTime(order.created_at)}>
+          {order.status === "served" || order.status === "cancelled" ? formatTime(order.created_at) : age < 1 ? "now" : `${age} min`}
+        </span>
+        <StatusChip status={order.status} />
+      </header>
+
+      <div className={`${pad} pb-3`}>
+        <ItemLines items={items} images={images} dense={dense} />
+        {order.status === "cancelled" && order.cancel_reason && (
+          <p className="mt-2 text-cap text-ink-3">Cancelled: {order.cancel_reason}</p>
+        )}
+      </div>
+
+      <footer className={`flex flex-wrap items-center gap-1.5 ${pad} ${flat ? "pb-4 pt-1" : "border-t border-line py-2.5"}`}>
+        <p className="mr-auto text-body font-bold tnum">{rupee(order.total)}</p>
+        {actions.main.map((a) => (
           <button
-            onClick={() => setCancelModal(false)}
-            className="btn-secondary"
+            key={a.to}
+            onClick={() => act(a.to)}
+            disabled={mutation.isPending}
+            className={`btn btn-sm ${BTN[a.kind]}`}
           >
-            Keep
+            <a.icon size={14} />
+            {a.label}
           </button>
-          <button onClick={confirmCancel} className="btn-danger">
-            Cancel order
-          </button>
-        </div>
-      </Modal>
-    </div>
+        ))}
+        {actions.more.length > 0 && (
+          <Menu
+            label={`More actions for order ${order.order_no}`}
+            width={196}
+            trigger={(p) => (
+              <button {...p} disabled={mutation.isPending} className="btn btn-ghost btn-icon btn-sm">
+                <MoreHorizontal size={16} />
+              </button>
+            )}
+          >
+            {actions.more.map((a, i) => (
+              <Fragment key={a.to}>
+                {a.danger && i > 0 && <MenuSeparator />}
+                <MenuItem icon={a.icon} danger={a.danger} onSelect={() => act(a.to)}>
+                  {a.label}
+                </MenuItem>
+              </Fragment>
+            ))}
+          </Menu>
+        )}
+      </footer>
+
+      <CancelOrderModal
+        open={cancelOpen}
+        onClose={() => setCancelOpen(false)}
+        order={order}
+        loading={mutation.isPending}
+        onConfirm={(reason) => {
+          setCancelOpen(false);
+          mutation.mutate({ from: order.status, to: "cancelled", reason });
+        }}
+      />
+    </article>
   );
 }

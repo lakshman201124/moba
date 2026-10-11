@@ -5,7 +5,12 @@ const env = import.meta.env;
 export const SUPABASE_URL = env.VITE_SUPABASE_URL || env.NEXT_PUBLIC_SUPABASE_URL || "";
 export const SUPABASE_PUBLISHABLE_KEY =
   env.VITE_SUPABASE_PUBLISHABLE_KEY || env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || "";
-export const PUBLIC_MENU_URL = (env.VITE_PUBLIC_MENU_URL || "https://moba.cafe").replace(/\/+$/, "");
+// Strip trailing slashes and any stray "#" / "?": the table token must land in the real query
+// string ("/?t=..."), because the customer menu reads it with searchParams, not from the hash.
+export const PUBLIC_MENU_URL = (env.VITE_PUBLIC_MENU_URL || "https://moba.cafe")
+  .trim()
+  .replace(/[#?].*$/, "")
+  .replace(/\/+$/, "");
 
 export const isConfigured =
   Boolean(SUPABASE_URL && SUPABASE_PUBLISHABLE_KEY) &&
