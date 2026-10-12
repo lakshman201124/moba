@@ -243,8 +243,10 @@ img { display: block; max-width: 100%; }
   container-type: size;
   overflow: hidden;
 }
-.card__art .plate { width: min(86cqw, 96cqh); aspect-ratio: 1; border-radius: 18px; }
+.card__art .plate { width: min(86cqw, 96cqh); aspect-ratio: 1; border-radius: 18px; overflow: hidden; }
 .card__art .plate::after { border-radius: 12px; }
+.card__art .plate--photo { border: 2px solid currentColor; background: var(--art-bg); }
+.card__art .plate--photo::after { display: none; }
 .card__art .plate img { border-radius: 50%; box-shadow: 0 8px 28px -8px rgba(27, 26, 46, 0.5); }
 .card__art .plate .art { width: 52%; }
 .card__foot {
