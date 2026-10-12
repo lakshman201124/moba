@@ -358,12 +358,12 @@
     let best = 0;
     let bestD = Infinity;
     state.cards.forEach((card, i) => {
-      const d = (card.offsetLeft + card.offsetWidth / 2 - mid) / (card.offsetWidth + 14);
+      const d = (card.offsetLeft + card.offsetWidth / 2 - mid) / (card.offsetWidth + 20);
       if (Math.abs(d) < bestD) { bestD = Math.abs(d); best = i; }
       if (!reduceMotion) {
         const c = Math.max(-1.6, Math.min(1.6, d));
         const a = Math.abs(c);
-        card.style.transform = `translateY(${(a * 14).toFixed(1)}px) rotate(${(c * 3).toFixed(2)}deg) scale(${(1 - a * 0.05).toFixed(3)})`;
+        card.style.transform = `translateY(${(a * 8).toFixed(1)}px) rotate(${(c * 2).toFixed(2)}deg) scale(${(1 - a * 0.04).toFixed(3)})`;
       }
     });
     if (best !== state.visIdx) {

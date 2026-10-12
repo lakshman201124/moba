@@ -183,11 +183,11 @@ img { display: block; max-width: 100%; }
   --pad: calc(50% - var(--card-w) / 2);
   position: relative;
   display: flex;
-  gap: 14px;
+  gap: 20px;
   overflow-x: auto;
   overscroll-behavior-x: contain;
   scroll-snap-type: x mandatory;
-  padding: 22px var(--pad) 36px;
+  padding: 28px var(--pad) 40px;
   scrollbar-width: none;
 }
 .rail::-webkit-scrollbar { display: none; }
@@ -211,6 +211,7 @@ img { display: block; max-width: 100%; }
   transform-origin: 50% 100%;
   transition: background-color 0.45s var(--ease-out), color 0.45s var(--ease-out);
   will-change: transform;
+  overflow: hidden;
 }
 .card.is-active { --art-bg: var(--ink); background: var(--ink); color: var(--cream); }
 
@@ -237,13 +238,14 @@ img { display: block; max-width: 100%; }
   display: grid;
   place-items: center;
   min-height: 0;
-  padding: 8px 0 4px;
+  padding: 6px 0 4px;
   pointer-events: none;
   container-type: size;
+  overflow: hidden;
 }
-.card__art .plate { width: min(92cqw, 100cqh); aspect-ratio: 1; border-radius: 18px; }
-.card__art .plate::after { border-radius: 12px; }
-.card__art .plate img { border-radius: 16px; box-shadow: 0 8px 28px -8px rgba(27, 26, 46, 0.5); }
+.card__art .plate { width: min(86cqw, 96cqh); aspect-ratio: 1; border-radius: 50%; }
+.card__art .plate::after { border-radius: 50%; }
+.card__art .plate img { border-radius: 50%; box-shadow: 0 8px 28px -8px rgba(27, 26, 46, 0.5); }
 .card__art .plate .art { width: 52%; }
 .card__foot {
   display: flex;
@@ -269,7 +271,7 @@ img { display: block; max-width: 100%; }
 .stamp {
   position: absolute;
   z-index: 2;
-  right: -10px;
+  right: 6px;
   bottom: 62px;
   pointer-events: none;
   display: grid;
@@ -314,7 +316,7 @@ img { display: block; max-width: 100%; }
     display: flex;
     gap: 10px;
     justify-content: center;
-    margin-top: -14px;
+    margin-top: -18px;
     margin-bottom: 14px;
   }
 }
