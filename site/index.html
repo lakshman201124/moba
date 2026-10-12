@@ -51,6 +51,9 @@ section{position:relative}
 .pill:active{transform:translate(3px,3px);box-shadow:1px 1px 0 var(--blue)}
 .pill.ghost{background:var(--cream);color:var(--blue)}
 .pill.sun{background:var(--sun);color:var(--ink)}
+.pill.lemon{background:var(--lemon);color:var(--ink)}
+.pill.sky{background:var(--sky);color:var(--ink)}
+.visit-links{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin-top:24px}
 .chip{display:inline-flex;align-items:center;border:2.5px solid var(--blue);background:var(--cream);color:var(--ink);
   border-radius:999px;padding:6px 14px;font-size:15px;line-height:1.1}
 .chip.c-sky{background:var(--sky)} .chip.c-pink{background:var(--pink)} .chip.c-sun{background:var(--sun)} .chip.c-lemon{background:var(--lemon)}
@@ -484,14 +487,14 @@ footer .cols a{display:block;color:var(--ink);text-decoration:none;padding:9px 0
 <!-- VISIT (blue) -->
 <section class="sec bg-blue visit" id="visit">
   <div class="wrap">
-    <div class="eyebrow">같이 밥 먹어요 · let's eat together</div>
+    <div class="eyebrow" id="visit-tagline">같이 밥 먹어요 · let's eat together</div>
     <h2 class="d loud-sun">Come gather<br>with us</h2>
-    <div class="rowinfo">
-      <div><b>Hours</b>Placeholder: client to confirm</div>
-      <div><b>Find us</b>Placeholder address: client to confirm</div>
-      <div><b>Follow</b>@moba (Instagram handle to confirm)</div>
+    <div class="rowinfo" id="visit-info">
+      <div id="visit-hours"><b>Hours</b><span>Loading…</span></div>
+      <div id="visit-address"><b>Find us</b><span>Loading…</span></div>
+      <div id="visit-follow"><b>Follow</b><span>Loading…</span></div>
     </div>
-    <a href="#" class="pill sun">Follow us</a>
+    <div id="visit-links" class="visit-links"></div>
   </div>
 </section>
 
@@ -500,7 +503,7 @@ footer .cols a{display:block;color:var(--ink);text-decoration:none;padding:9px 0
   <div class="wrap">
     <div class="cols">
       <div><b>Menu</b><a data-bubble href="menu.html">Signatures</a><a data-bubble href="menu.html#rameyon">Rameyon</a><a data-bubble href="menu.html">Boba Bar</a><a data-bubble href="menu.html">K-Desserts</a></div>
-      <div><b>MOBA</b><a href="#story">Our story</a><a href="#visit">Find us</a><a href="#">Instagram</a><a data-bubble href="menu.html">Spice guide</a></div>
+      <div id="footer-links"><b>MOBA</b><a href="#story">Our story</a><a href="#visit">Find us</a><a data-bubble href="menu.html">Spice guide</a></div>
     </div>
     <div class="footword d loud-cream">MOBA</div>
   </div>
@@ -862,5 +865,64 @@ addEventListener('keydown',e=>{if(e.key==='Escape'&&!nav.hidden){setNav(false);n
 })();
 </script>
 <script src="bubble-transition.js"></script>
+<script>
+(function(){
+  const { supabaseUrl, supabaseKey } = window.MOBA_CONFIG;
+  const headers = { "Content-Type": "application/json", apikey: supabaseKey };
+  if (supabaseKey.startsWith("eyJ")) headers.Authorization = "Bearer " + supabaseKey;
+
+  fetch(supabaseUrl + "/rest/v1/rpc/get_restaurant_info", { method: "POST", headers, body: "{}" })
+    .then(function(r) { return r.ok ? r.json() : null; })
+    .then(function(info) {
+      if (!info) return;
+
+      var hours = document.getElementById("visit-hours");
+      if (hours) hours.innerHTML = "<b>Hours</b>" + (info.hours || "Check with us");
+
+      var addr = document.getElementById("visit-address");
+      if (addr) {
+        var link = info.mapUrl ? '<a href="' + info.mapUrl + '" target="_blank" rel="noopener">' + (info.address || "Find us on Maps") + "</a>" : (info.address || "");
+        addr.innerHTML = "<b>Find us</b>" + link;
+      }
+
+      var follow = document.getElementById("visit-follow");
+      if (follow && info.instagram) {
+        var handle = info.instagram.replace(/\/$/, "").split("/").pop();
+        follow.innerHTML = '<b>Follow</b><a href="' + info.instagram + '" target="_blank" rel="noopener">@' + handle + "</a>";
+      } else if (follow && info.phone) {
+        follow.innerHTML = "<b>Call us</b>" + info.phone;
+      }
+
+      if (info.tagline) {
+        var tl = document.getElementById("visit-tagline");
+        if (tl) tl.textContent = info.tagline;
+      }
+
+      var vl = document.getElementById("visit-links");
+      if (vl) {
+        var btns = [];
+        if (info.instagram) btns.push('<a href="' + info.instagram + '" target="_blank" rel="noopener" class="pill sun">Follow us</a>');
+        if (info.googleReview) btns.push('<a href="' + info.googleReview + '" target="_blank" rel="noopener" class="pill lemon">Leave a review ★</a>');
+        if (info.whatsapp) btns.push('<a href="https://wa.me/' + info.whatsapp.replace(/[^0-9]/g, "") + '" target="_blank" rel="noopener" class="pill sky">Chat on WhatsApp</a>');
+        if (info.mapUrl) btns.push('<a href="' + info.mapUrl + '" target="_blank" rel="noopener" class="pill sky">Get directions</a>');
+        vl.innerHTML = btns.join("");
+      }
+
+      var fl = document.getElementById("footer-links");
+      if (fl) {
+        var links = '<b>MOBA</b><a href="#story">Our story</a><a href="#visit">Find us</a>';
+        if (info.instagram) links += '<a href="' + info.instagram + '" target="_blank" rel="noopener">Instagram</a>';
+        if (info.facebook) links += '<a href="' + info.facebook + '" target="_blank" rel="noopener">Facebook</a>';
+        if (info.youtube) links += '<a href="' + info.youtube + '" target="_blank" rel="noopener">YouTube</a>';
+        if (info.googleReview) links += '<a href="' + info.googleReview + '" target="_blank" rel="noopener">Reviews</a>';
+        if (info.zomato) links += '<a href="' + info.zomato + '" target="_blank" rel="noopener">Zomato</a>';
+        if (info.swiggy) links += '<a href="' + info.swiggy + '" target="_blank" rel="noopener">Swiggy</a>';
+        links += '<a data-bubble href="menu.html">Spice guide</a>';
+        fl.innerHTML = links;
+      }
+    })
+    .catch(function() {});
+})();
+</script>
 </body>
 </html>

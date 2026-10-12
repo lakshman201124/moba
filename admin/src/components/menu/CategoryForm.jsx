@@ -48,6 +48,11 @@ const toItems = (t) =>
     return [a.trim(), b.join("|").trim()];
   });
 
+const CATEGORY_SHAPES = [
+  { key: "tile",   label: "Category tile (square)",  w: 112, h: 112, radius: 12 },
+  { key: "banner", label: "Wide banner",             w: 168, h: 100, radius: 14 },
+];
+
 const blank = {
   name: "", short_name: "", name_ko: "", slug: "", blurb: "", art: "pot",
   image_path: null, is_visible: true, groups: [], notes: [],
@@ -182,7 +187,7 @@ export default function CategoryForm({ category, dishCount = 0, onCancel }) {
 
         <Section title="Look" description="The cover photo and the line drawing next to the section title.">
           <div className="space-y-5">
-            <ImageUpload folder="categories" label="Cover photo" value={watch("image_path")} onChange={(p) => setValue("image_path", p, { shouldDirty: true })} />
+            <ImageUpload folder="categories" label="Cover photo" shapes={CATEGORY_SHAPES} value={watch("image_path")} onChange={(p) => setValue("image_path", p, { shouldDirty: true })} />
             <div>
               <p className="label">Menu illustration</p>
               <div className="flex flex-wrap gap-1.5" role="radiogroup" aria-label="Menu illustration">

@@ -14,6 +14,7 @@ const TablesPage = lazy(() => import("./pages/TablesPage"));
 const MenuPage = lazy(() => import("./pages/MenuPage"));
 const AddonsPage = lazy(() => import("./pages/AddonsPage"));
 const ChoicesPage = lazy(() => import("./pages/ChoicesPage"));
+const SettingsPage = lazy(() => import("./pages/SettingsPage"));
 
 export default function App() {
   return (
@@ -37,6 +38,7 @@ export default function App() {
           <Route path="/menu/dishes/:dishId" element={<MenuPage mode="dish" />} />
           <Route path="/menu/addons" element={<AddonsPage />} />
           <Route path="/menu/choices" element={<ChoicesPage />} />
+          <Route path="/settings" element={<SettingsPage />} />
           <Route path="*" element={<NotFoundPage />} />
         </Route>
         <Route path="*" element={<NotFoundPage standalone />} />

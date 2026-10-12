@@ -23,6 +23,12 @@ import { invalidateMenu, ruleText } from "./menuQueries";
 
 const BADGES = ["signature", "most loved", "new", "chef's pick"];
 
+const DISH_SHAPES = [
+  { key: "dish",     label: "Dish card (circle)",     w: 112, h: 112, radius: "50%" },
+  { key: "featured", label: "Most Loved card",        w: 152, h: 114, radius: 16 },
+  { key: "detail",   label: "Detail hero",            w: 140, h: 140, radius: "50%" },
+];
+
 const schema = z
   .object({
     name: z.string().trim().min(1, "Give the dish a name.").max(80),
@@ -203,7 +209,7 @@ export default function DishDrawer({ dishId, presetCategory, categories, onClose
           {errors.form && <p role="alert" className="mb-4 rounded-[10px] bg-red-soft px-3 py-2 text-meta font-semibold text-red">{errors.form}</p>}
 
           <Section>
-            <ImageUpload folder="dishes" label="Dish photo" value={watch("image_path")} onChange={(p) => setValue("image_path", p, { shouldDirty: true })} />
+            <ImageUpload folder="dishes" label="Dish photo" shapes={DISH_SHAPES} value={watch("image_path")} onChange={(p) => setValue("image_path", p, { shouldDirty: true })} />
           </Section>
 
           <Section title="Details">

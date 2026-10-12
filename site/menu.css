@@ -160,6 +160,22 @@ img { display: block; max-width: 100%; }
 @media (hover: hover) {
   .tile:hover { --art-bg: var(--ink); background: var(--ink); color: var(--cream); }
   .tile:hover .tile__ko { color: var(--lemon); }
+  .tile:hover .tile__cover { border-color: var(--cream); }
+}
+.tile__cover {
+  width: 54px;
+  height: 54px;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1.5px solid currentColor;
+  margin-bottom: 2px;
+  flex: none;
+}
+.tile__cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }
 
 /* ─────────── most-loved rail ─────────── */
@@ -225,7 +241,10 @@ img { display: block; max-width: 100%; }
   pointer-events: none;
   container-type: size;
 }
-.card__art .plate { width: min(80cqw, 100cqh); aspect-ratio: 1; }
+.card__art .plate { width: min(92cqw, 100cqh); aspect-ratio: 1; border-radius: 18px; }
+.card__art .plate::after { border-radius: 12px; }
+.card__art .plate img { border-radius: 16px; box-shadow: 0 8px 28px -8px rgba(27, 26, 46, 0.5); }
+.card__art .plate .art { width: 52%; }
 .card__foot {
   display: flex;
   align-items: center;
