@@ -608,14 +608,81 @@
   }
 
   // ── cart ──────────────────────────────────────────────
-  function updateBadge(bump) {
+  // ── cart ──────────────────────────────────────────────
+  function spawnSparks(x, y, count = 5, spread = 26) {
+    if (!G) return;
+    const colors = ["#FF531B", "#FED602", "#8BBEE9", "#6FBF5B", "#FFDAEF"];
+    const shapes = ["✦", "✧", "★", "✦", "✧"];
+    for (let i = 0; i < count; i++) {
+      const spark = document.createElement("span");
+      spark.className = "moba-fly-spark";
+      spark.textContent = shapes[i % shapes.length];
+      spark.style.color = colors[i % colors.length];
+      spark.style.left = `${x}px`;
+      spark.style.top = `${y}px`;
+      document.body.appendChild(spark);
+
+      const angle = (i * (360 / count) + (Math.random() * 24 - 12)) * (Math.PI / 180);
+      const dist = spread + Math.random() * 14;
+      const targetX = Math.cos(angle) * dist;
+      const targetY = Math.sin(angle) * dist;
+
+      G.timeline({ onComplete: () => spark.remove() })
+        .fromTo(spark,
+          { scale: 0, x: 0, y: 0, rotation: 0, opacity: 1 },
+          {
+            scale: 1.25,
+            x: targetX,
+            y: targetY,
+            rotation: (Math.random() - 0.5) * 160,
+            duration: 0.28,
+            ease: "power2.out"
+          }
+        )
+        .to(spark, { scale: 0, opacity: 0, duration: 0.25, ease: "power1.in" });
+    }
+  }
+
+  function updateBadge(bump, qtyAdded = 1) {
     const n = cartCount();
     el.badge.hidden = n === 0;
     el.badge.textContent = n;
     el.listBtn.setAttribute("aria-label", n ? `Your order, ${plural(n, "item", "items")}` : "Your order, empty");
     if (bump && G && n) {
-      G.fromTo(el.badge, { scale: 1.8 }, { scale: 1, duration: 0.7, ease: "elastic.out(1, 0.45)" });
-      G.fromTo(el.listBtn, { rotate: -16 }, { rotate: 0, duration: 0.8, ease: "elastic.out(1, 0.35)" });
+      // 1. Squash and stretch on cart button
+      G.timeline({ overwrite: "auto" })
+        .to(el.listBtn, { scaleX: 1.35, scaleY: 0.72, duration: 0.14, ease: "power2.out" })
+        .to(el.listBtn, { scaleX: 0.88, scaleY: 1.22, rotate: -12, duration: 0.18, ease: "back.out(2)" })
+        .to(el.listBtn, { scaleX: 1, scaleY: 1, rotate: 0, duration: 0.45, ease: "elastic.out(1.2, 0.35)" });
+
+      // 2. Ripple shockwave ring around listBtn
+      const ripple = document.createElement("span");
+      ripple.className = "moba-cart-ripple";
+      el.listBtn.appendChild(ripple);
+      G.fromTo(ripple,
+        { scale: 0.4, opacity: 0.95 },
+        { scale: 2.2, opacity: 0, duration: 0.6, ease: "power2.out", onComplete: () => ripple.remove() }
+      );
+
+      // 3. Elastic pop on the badge
+      G.fromTo(el.badge,
+        { scale: 2.4, rotate: 18 },
+        { scale: 1, rotate: 0, duration: 0.75, ease: "elastic.out(1.2, 0.4)" }
+      );
+
+      // 4. Floating "+qty" pill indicator above the cart
+      const floatTag = document.createElement("div");
+      floatTag.className = "moba-cart-float-qty";
+      floatTag.textContent = `+${qtyAdded || 1}`;
+      el.listBtn.appendChild(floatTag);
+      G.fromTo(floatTag,
+        { y: 0, opacity: 1, scale: 0.7 },
+        { y: -36, opacity: 0, scale: 1.2, duration: 0.8, ease: "power2.out", onComplete: () => floatTag.remove() }
+      );
+
+      // 5. Celebration sparks at cart button
+      const t = el.listBtn.getBoundingClientRect();
+      spawnSparks(t.left + t.width / 2, t.top + t.height / 2, 5, 28);
     }
   }
 
@@ -670,23 +737,122 @@
     afterCartChange([l.id]);
   }
 
-  function fly(src, done) {
-    if (!G || !src) return done();
+  function fly(src, done, meta = {}) {
+    if (!G || !src) {
+      if (done) done();
+      return;
+    }
+
+    const { dish, qty = 1, btn } = meta;
+
+    // 1. Button click punch & spark burst
+    if (btn) {
+      const btnRect = btn.getBoundingClientRect();
+      spawnSparks(btnRect.left + btnRect.width / 2, btnRect.top + btnRect.height / 2, 4, 22);
+      G.timeline()
+        .to(btn, { scale: 0.85, duration: 0.1, ease: "power2.out" })
+        .to(btn, { scale: 1.15, duration: 0.16, ease: "back.out(2.5)" })
+        .to(btn, { scale: 1, duration: 0.14, ease: "power2.out" });
+    }
+
     const r = src.getBoundingClientRect();
     const t = el.listBtn.getBoundingClientRect();
-    const clone = src.cloneNode(true);
-    clone.removeAttribute("id");
-    clone.classList.add("flyer");
-    Object.assign(clone.style, {
-      left: `${r.left}px`, top: `${r.top}px`, width: `${r.width}px`, height: `${r.height}px`, borderRadius: "50%",
+
+    const startX = r.left + r.width / 2;
+    const startY = r.top + r.height / 2;
+    const targetX = t.left + t.width / 2;
+    const targetY = t.top + t.height / 2;
+
+    const stickerSize = 64;
+
+    // Create the cute Moba sticker
+    const sticker = document.createElement("div");
+    sticker.className = "moba-fly-sticker";
+    sticker.style.left = `${startX - stickerSize / 2}px`;
+    sticker.style.top = `${startY - stickerSize / 2}px`;
+    sticker.style.width = `${stickerSize}px`;
+    sticker.style.height = `${stickerSize}px`;
+
+    // Inner art
+    const artWrap = document.createElement("div");
+    artWrap.className = "moba-fly-art";
+    const srcImg = src.querySelector("img");
+    if (srcImg && srcImg.src) {
+      const img = document.createElement("img");
+      img.src = srcImg.src;
+      img.alt = "";
+      artWrap.appendChild(img);
+    } else {
+      const artName = dish ? (catOf(dish)?.art || "pot") : "pot";
+      artWrap.innerHTML = art(artName);
+    }
+    sticker.appendChild(artWrap);
+
+    // Cute "+1" tag
+    const tag = document.createElement("span");
+    tag.className = "moba-fly-tag";
+    tag.textContent = `+${qty}`;
+    sticker.appendChild(tag);
+
+    document.body.appendChild(sticker);
+
+    const dx = targetX - startX;
+    const dy = targetY - startY;
+
+    // Parabolic arc: loft upward by 45-85px before curving down towards cart button
+    const liftY = -Math.max(45, Math.min(85, Math.abs(dy) * 0.22));
+    const flightDuration = 1.05; // clear, smooth, unhurried and easy to track!
+
+    const tl = G.timeline({
+      onComplete() {
+        sticker.remove();
+        if (done) done();
+      }
     });
-    document.body.appendChild(clone);
-    const dx = t.left + t.width / 2 - (r.left + r.width / 2);
-    const dy = t.top + t.height / 2 - (r.top + r.height / 2);
-    G.timeline({ onComplete() { clone.remove(); done(); } })
-      .to(clone, { x: dx, duration: 0.75, ease: "power1.in" }, 0)
-      .to(clone, { y: dy, duration: 0.75, ease: "back.in(2.4)" }, 0)
-      .to(clone, { scale: Math.min(1, 20 / r.width), rotate: 220, duration: 0.75, ease: "power2.in" }, 0);
+
+    // Initial pop-in from dish/button (0 to 0.2s)
+    tl.fromTo(sticker,
+      { scale: 0.35, opacity: 0, rotation: -20 },
+      { scale: 1.05, opacity: 1, rotation: 8, duration: 0.2, ease: "back.out(2.2)" },
+      0
+    );
+
+    // Horizontal transit across screen (smooth in-out ease)
+    tl.to(sticker, {
+      x: dx,
+      duration: flightDuration - 0.1,
+      ease: "power2.inOut",
+    }, 0.1);
+
+    // Vertical parabolic arc:
+    // 1. Loft up to apex
+    tl.to(sticker, {
+      y: liftY,
+      duration: 0.38,
+      ease: "power2.out",
+    }, 0.1);
+
+    // 2. Swoop down from apex into cart bag
+    tl.to(sticker, {
+      y: dy,
+      duration: flightDuration - 0.48,
+      ease: "power2.in",
+    }, ">");
+
+    // Playful rotation during flight
+    tl.to(sticker, {
+      rotation: 360,
+      duration: flightDuration - 0.1,
+      ease: "power1.out",
+    }, 0.1);
+
+    // As it meets the cart, shrink into the bag
+    tl.to(sticker, {
+      scale: 0.25,
+      opacity: 0.3,
+      duration: 0.14,
+      ease: "power2.in",
+    }, flightDuration - 0.12);
   }
 
   function quickAdd(id, btn) {
@@ -695,7 +861,7 @@
     if (needsBuilder(d)) return openDetail(id, btn);
     addLine({ id, sizeId: null, picks: {}, addons: [], note: "", qty: 1 });
     const src = btn.closest(".dish, .card")?.querySelector(".plate") || btn;
-    fly(src, () => updateBadge(true));
+    fly(src, () => updateBadge(true, 1), { dish: d, qty: 1, btn });
   }
 
   function lineDetails(l) {
@@ -1392,8 +1558,13 @@
       if (b.qty === 0) toast(`${b.d.name} removed`);
       return requestClose();
     }
-    addLine(builtLine());
-    fly($(".detail__hero .plate", el.detailPanel), () => { updateBadge(true); requestClose(); });
+    const line = builtLine();
+    const dish = b.d;
+    const qty = b.qty;
+    addLine(line);
+    const heroPlate = $(".detail__hero .plate", el.detailPanel) || $("#buyBtn");
+    requestClose();
+    fly(heroPlate, () => updateBadge(true, qty), { dish, qty });
   }
 
   // ── toast ─────────────────────────────────────────────
