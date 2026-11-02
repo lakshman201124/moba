@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>MOBA colour check</title>
+<style>
+  :root { color-scheme: light; }
+  body { margin: 0; background: #FFFFFF; color: #1B1A2E; font: 16px/1.45 system-ui, sans-serif; }
+  .wrap { padding: 16px; }
+  h1 { font-size: 20px; margin: 0 0 4px; }
+  h2 { font-size: 16px; margin: 24px 0 8px; }
+  p { margin: 0 0 8px; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  td { padding: 6px 4px; border-bottom: 1px solid #ddd; vertical-align: top; overflow-wrap: anywhere; }
+  td:first-child { width: 42%; color: #555; }
+  .verdict { padding: 12px; border: 2px solid #3069B8; border-radius: 10px; font-size: 15px; }
+  .pair { display: grid; grid-template-columns: 1fr 1fr; border: 2px solid #1B1A2E; border-radius: 10px; overflow: hidden; }
+  .pair div, .opt { display: grid; place-items: center; min-height: 140px; font-weight: 600; text-align: center; }
+  .opts { display: grid; gap: 10px; }
+  .opt { border: 2px solid #1B1A2E; border-radius: 10px; min-height: 90px; }
+  small { font-weight: 400; display: block; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>MOBA colour check</h1>
+  <p>Open this on the phone where the site looks white, then send a screenshot of this page (or read out the answers).</p>
+
+  <h2>1. Can your screen tell white from our cream?</h2>
+  <div class="pair">
+    <div style="background:#FFFFFF">WHITE<small>#FFFFFF</small></div>
+    <div style="background:#FFF8E7">OUR CREAM<small>#FFF8E7</small></div>
+  </div>
+  <p style="margin-top:8px">If the two halves look the same, the phone's screen or settings are washing out light colours.</p>
+
+  <h2>2. What your phone's browser does with our cream</h2>
+  <div class="verdict" id="verdict">Checking…</div>
+
+  <h2>3. Phone settings that change colours</h2>
+  <table id="settings"></table>
+
+  <h2>4. Which cream looks right on this phone?</h2>
+  <div class="opts">
+    <div class="opt" style="background:#FFF8E7">A · today's cream<small>#FFF8E7</small></div>
+    <div class="opt" style="background:#FFF5DD">B · a little warmer<small>#FFF5DD</small></div>
+    <div class="opt" style="background:#FFF1D2">C · warmer<small>#FFF1D2</small></div>
+    <div class="opt" style="background:#FDEBC4">D · warmest<small>#FDEBC4</small></div>
+  </div>
+</div>
+
+<script>
+(function () {
+  const row = (table, k, v) => { const tr = document.createElement('tr'); tr.innerHTML = '<td></td><td></td>'; tr.cells[0].textContent = k; tr.cells[1].textContent = v; table.appendChild(tr); };
+  const mq = (q) => matchMedia(q).matches;
+  const s = document.getElementById('settings');
+  row(s, 'Dark mode requested', mq('(prefers-color-scheme: dark)') ? 'yes' : 'no');
+  row(s, 'Forced colours (high contrast)', mq('(forced-colors: active)') ? 'ON: the browser replaces page colours' : 'off');
+  row(s, 'Increased contrast', mq('(prefers-contrast: more)') ? 'ON' : (mq('(prefers-contrast: less)') ? 'less' : 'off'));
+  row(s, 'Inverted colours', mq('(inverted-colors: inverted)') ? 'ON' : 'off');
+  row(s, 'Colour range of screen', mq('(color-gamut: p3)') ? 'wide (P3)' : (mq('(color-gamut: srgb)') ? 'standard (sRGB)' : 'unknown'));
+  row(s, 'High brightness (HDR) screen', mq('(dynamic-range: high)') ? 'yes' : 'no');
+  row(s, 'Screen', screen.width + '×' + screen.height + ' @ ' + devicePixelRatio + 'x');
+  row(s, 'Browser', navigator.userAgent);
+
+  // the cream swatch above uses exactly the home page's cream, so it goes through the same browser and settings
+  const toHex = (c) => { const m = c.match(/\d+(\.\d+)?/g); if (!m || (m[3] !== undefined && +m[3] === 0)) return 'transparent'; return '#' + m.slice(0, 3).map(n => (+n).toString(16).padStart(2, '0')).join('').toUpperCase(); };
+  const swatch = toHex(getComputedStyle(document.querySelector('.pair div:last-child')).backgroundColor);
+  const changed = mq('(forced-colors: active)') || mq('(inverted-colors: inverted)');
+  document.getElementById('verdict').textContent = swatch === '#FFF8E7' && !changed
+    ? 'Your browser keeps our cream exactly (' + swatch + '). The website is sending and drawing cream; if the two halves in step 1 look the same, your screen or a display setting is making it look white.'
+    : 'Your browser turns our cream into ' + swatch + (changed ? ' because a colour setting is on (see step 3)' : '') + '. A phone setting is changing the website\'s colours.';
+})();
+</script>
+</body>
+</html>
