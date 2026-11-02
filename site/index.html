@@ -76,6 +76,18 @@ section{position:relative}
   font:400 24px/1 "Bagel Fat One",sans-serif;text-transform:uppercase;color:var(--orange);-webkit-text-stroke:1px var(--blue);text-decoration:none}
 .navpanel a:last-child{border-bottom:0}
 .navpanel a span{font:400 15px/1 "Jua",sans-serif;color:var(--blue);-webkit-text-stroke:0;text-transform:none}
+.credits summary{display:flex;align-items:center;justify-content:space-between;min-height:56px;list-style:none;cursor:pointer;
+  font:400 24px/1 "Bagel Fat One",sans-serif;text-transform:uppercase;color:var(--orange);-webkit-text-stroke:1px var(--blue)}
+.credits summary::-webkit-details-marker{display:none}
+.credits summary span{font:400 15px/1 "Jua",sans-serif;color:var(--blue);-webkit-text-stroke:0;transition:transform .2s}
+.credits[open] summary span{transform:rotate(180deg)}
+.credits__card{margin:2px 0 8px;padding:4px 18px;background:var(--lemon);border:var(--ol);border-radius:16px;box-shadow:4px 4px 0 var(--blue)}
+.credits__card div{padding:12px 0;border-bottom:2px dashed #3069B840}
+.credits__card div:last-child{border-bottom:0}
+.credits__card dt{font-size:13px;line-height:1.2;letter-spacing:.06em;text-transform:uppercase;color:var(--blue)}
+.credits__card dd{margin:4px 0 0;font-size:19px;line-height:1.25;color:var(--ink);overflow-wrap:anywhere}
+.navpanel .credits__card a{display:inline;min-height:0;border:0;font:inherit;text-transform:none;color:var(--blue);-webkit-text-stroke:0;
+  text-decoration:underline;text-underline-offset:3px}
 section[id]{scroll-margin-top:76px}
 
 /* ---- hero ---- */
@@ -300,9 +312,15 @@ footer .cols a{display:block;color:var(--ink);text-decoration:none;padding:9px 0
   <nav class="navpanel" id="navpanel" hidden>
     <div class="wrap">
       <a data-bubble href="menu.html">The menu <span>메뉴 →</span></a>
-      <a data-bubble href="menu.html#rameyon">Rameyon <span>라면 →</span></a>
       <a href="#story">Our story <span>→</span></a>
       <a href="#visit">Find us <span>→</span></a>
+      <details class="credits">
+        <summary>Credits <span aria-hidden="true">↓</span></summary>
+        <dl class="credits__card">
+          <div><dt>Design &amp; development</dt><dd>Lakshman Govindan</dd></div>
+          <div><dt>Contact</dt><dd><a href="mailto:lakshmangovindan20@gmail.com">lakshmangovindan20@gmail.com</a></dd></div>
+        </dl>
+      </details>
     </div>
   </nav>
 </header>
@@ -520,7 +538,8 @@ footer .cols a{display:block;color:var(--ink);text-decoration:none;padding:9px 0
 <script>
 
 const navBtn=document.querySelector('.iconbtn'), nav=document.getElementById('navpanel');
-const setNav=open=>{nav.hidden=!open;navBtn.setAttribute('aria-expanded',open);navBtn.setAttribute('aria-label',open?'Close menu':'Open menu');};
+const setNav=open=>{nav.hidden=!open;navBtn.setAttribute('aria-expanded',open);navBtn.setAttribute('aria-label',open?'Close menu':'Open menu');
+  if(!open)nav.querySelector('.credits').open=false;};
 navBtn.addEventListener('click',()=>setNav(nav.hidden));
 nav.addEventListener('click',e=>{if(e.target.closest('a'))setNav(false);});
 document.addEventListener('click',e=>{if(!nav.hidden&&!e.target.closest('.topbar'))setNav(false);});
@@ -648,7 +667,7 @@ addEventListener('keydown',e=>{if(e.key==='Escape'&&!nav.hidden){setNav(false);n
 (function(){
   const rig=document.getElementById('cdrig'); if(!rig) return;
   const reduce=matchMedia('(prefers-reduced-motion:reduce)').matches;
-  const SRC='assets/corndog.png', TH=-25*Math.PI/180;       // source is tilted 25deg: stand it up
+  const SRC='assets/corndog.webp', TH=-25*Math.PI/180;      // source is tilted 25deg: stand it up
   const W=450, H=1535, CX=566, CY=162;                        // upright crop of the rotated source
   const A=x=>330+.235*(x-40);                                 // bite edge of the top chunk
   const B=x=>575+.16*(x-50);                                  // top edge of the bottom half
@@ -852,18 +871,28 @@ addEventListener('keydown',e=>{if(e.key==='Escape'&&!nav.hidden){setNav(false);n
     buildCue(); showCue(.6);
   }
 
+  let loaded=null, still=null;
+  const load=()=>loaded||(loaded=new Promise((ok,fail)=>{const img=new Image(); img.src=SRC; img.decode().then(()=>ok(img),fail);}));
+  // a still, upright corn dogg (one draw) holds the spot while the slow cut runs, so it's never empty
+  function showStill(img){
+    if(ready||still) return;
+    still=rotated(img); still.style.cssText='width:100%;height:100%'; rig.prepend(still);
+  }
+  const painted=()=>new Promise(r=>requestAnimationFrame(()=>setTimeout(r)));
   function init(){
-    const img=new Image(); img.src=SRC;
-    img.decode().then(()=>{
+    load().then(img=>{ showStill(img); return painted().then(()=>img); }).then(img=>{
       let band;
-      try{ if(!window.gsap||!window.Draggable) throw 0; band=cut(img); }catch(e){ fallback(img); return; }
-      mount(band); layout(); ready=true; start();
+      try{ if(!window.gsap||!window.Draggable) throw 0; band=cut(img); }catch(e){ still.remove(); fallback(img); return; }
+      mount(band); layout(); ready=true; start(); still.remove();
       addEventListener('resize',()=>{if(ready) layout();});
     }).catch(()=>{});
   }
-  // the source PNG is big: only fetch and cut it when the section is getting close
-  const io=new IntersectionObserver(es=>{if(es[0].isIntersecting){io.disconnect(); init();}},{rootMargin:'900px 0px'});
+  // cutting is heavy, so it waits until the section is getting close; the image itself is
+  // fetched, decoded and shown still as soon as the page is idle
+  const io=new IntersectionObserver(es=>{if(es[0].isIntersecting){io.disconnect(); init();}},{rootMargin:'1200px 0px'});
   io.observe(rig);
+  const early=()=>load().then(showStill).catch(()=>{});
+  addEventListener('load',()=>{ if('requestIdleCallback' in window) requestIdleCallback(early,{timeout:4000}); else setTimeout(early,2000); });
 })();
 </script>
 <script src="bubble-transition.js"></script>
