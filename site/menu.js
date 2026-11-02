@@ -16,6 +16,8 @@
   const DIET = { veg: "Veg", nonveg: "Non-veg", egg: "Contains egg", both: "Veg or non-veg" };
   const SPICE = ["Not spicy", "Mild", "Hot", "Very hot"];
   const TOP = "top";
+  // One medium tempo for every beat of adding to the order: the plate's flight, then the badge and button landing.
+  const ADD_PACE = { fly: 1.2, land: 0.9 };
 
   const rupee = (n) => "₹" + Number(n).toLocaleString("en-IN");
   const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -88,16 +90,19 @@
     bandBtns: [],
     visIdx: -1,
     menuVersion: 0,
+    // The menu as last ingested. Fresh data is compared against this, not the version number,
+    // so a stale or tampered cache carrying the live version still gets replaced.
+    menuSig: "",
     orderingOpen: true,
     tableLabel: null,
     tableActive: true,
-    qrInvalid: false,
     pollTimer: null,
     lastFetch: 0,
   };
 
   // ── data ──────────────────────────────────────────────
   function ingest(data) {
+    state.menuSig = JSON.stringify(data);
     state.menuVersion = data.version || 0;
     state.orderingOpen = data.orderingOpen !== false;
 
@@ -614,8 +619,8 @@
     el.badge.textContent = n;
     el.listBtn.setAttribute("aria-label", n ? `Your order, ${plural(n, "item", "items")}` : "Your order, empty");
     if (bump && G && n) {
-      G.fromTo(el.badge, { scale: 1.8 }, { scale: 1, duration: 0.7, ease: "elastic.out(1, 0.45)" });
-      G.fromTo(el.listBtn, { rotate: -16 }, { rotate: 0, duration: 0.8, ease: "elastic.out(1, 0.35)" });
+      G.fromTo(el.badge, { scale: 1.8 }, { scale: 1, duration: ADD_PACE.land, ease: "elastic.out(1, 0.45)" });
+      G.fromTo(el.listBtn, { rotate: -16 }, { rotate: 0, duration: ADD_PACE.land, ease: "elastic.out(1, 0.45)" });
     }
   }
 
@@ -684,9 +689,9 @@
     const dx = t.left + t.width / 2 - (r.left + r.width / 2);
     const dy = t.top + t.height / 2 - (r.top + r.height / 2);
     G.timeline({ onComplete() { clone.remove(); done(); } })
-      .to(clone, { x: dx, duration: 0.75, ease: "power1.in" }, 0)
-      .to(clone, { y: dy, duration: 0.75, ease: "back.in(2.4)" }, 0)
-      .to(clone, { scale: Math.min(1, 20 / r.width), rotate: 220, duration: 0.75, ease: "power2.in" }, 0);
+      .to(clone, { x: dx, duration: ADD_PACE.fly, ease: "power2.inOut" }, 0)
+      .to(clone, { y: dy, duration: ADD_PACE.fly, ease: "power2.inOut" }, 0)
+      .to(clone, { scale: Math.min(1, 20 / r.width), rotate: 180, duration: ADD_PACE.fly, ease: "power2.inOut" }, 0);
   }
 
   function quickAdd(id, btn) {
@@ -725,9 +730,9 @@
       <li class="line${editable ? "" : " line--placed"}${blocked ? " line--blocked" : ""}">
         ${marks(diet)}
         <div class="line__main">
-          <p class="line__name">${editable ? "" : `<span class="line__qty">${l.qty}×</span>`}${esc(editable ? d.name : l.name)}</p>
+          <p class="line__name">${editable ? "" : `<span class="line__qty">${esc(l.qty)}×</span>`}${esc(editable ? d.name : l.name)}</p>
           ${editable ? lineDetails(l).map((t) => `<p class="line__opt">${esc(t)}</p>`).join("") :
-            (l.choices || []).map((c) => `<p class="line__opt">${esc(c.label)}: ${(c.options || []).join(", ")}</p>`).join("") +
+            (l.choices || []).map((c) => `<p class="line__opt">${esc(c.label)}: ${(c.options || []).map(esc).join(", ")}</p>`).join("") +
             (l.addons || []).map((a) => `<p class="line__opt">+ ${esc(a.name)}</p>`).join("")}
           ${l.note ? `<p class="line__note">"${esc(l.note)}"</p>` : ""}
           ${blocked ? `<p class="line__blocked-msg">${l.blocked === "sold-out" ? "Sold out — remove to continue" : "Out today — edit or remove"}</p>` : ""}
@@ -763,8 +768,8 @@
           return `
           <details class="placed__order" open>
             <summary>
-              <span>Order #${o.orderNo} · Guest ${o.guestNo}</span>
-              <span class="status-chip status-chip--${o.status}">${esc(statusLabel)}</span>
+              <span>Order #${esc(o.orderNo)} · Guest ${esc(o.guestNo)}</span>
+              <span class="status-chip status-chip--${esc(o.status)}">${esc(statusLabel)}</span>
             </summary>
             <p class="placed__sub">${esc(statusSub)}</p>
             <ul class="lines">${(o.items || []).map((l) => lineHTML(l, { editable: false })).join("")}</ul>
@@ -813,17 +818,74 @@
     });
   }
 
-  // ── table footer and ordering state ───────────────────
-  const QR_INVALID_MSG = "This QR code isn't active any more. Scan the code on your table, or ask our staff.";
+  // ── table session and the scan gate ───────────────────
+  // The menu opens only within visit_order_minutes of a QR scan (the server enforces the same window).
+  // Outside it, the whole page is replaced by a scan screen; menu.css hides everything else (html.gated).
+  const GATES = {
+    none: ["Scan to see the menu", "Scan the QR code on your table at MOBA to browse the menu and order."],
+    expired: ["Scan again", "Your table session timed out. Scan the QR code on your table again to keep browsing and ordering."],
+    ended: ["Thanks for eating with us!", "Scan the QR code on your table to order again. 같이 밥 먹어요"],
+    invalid: ["Scan again", "This QR code isn't active any more. Scan the code on your table, or ask our staff."],
+    busy: ["One moment", "This QR code was scanned a lot just now. Please wait a minute and scan again."],
+    offline: ["No connection", "We couldn't reach MOBA. Check your connection and try again."],
+    opening: ["Opening your table…", ""],
+  };
 
-  // The stored table token was rejected: forget it and explain why ordering is off.
-  function dropInvalidTable() {
-    MOBA_TABLE.drop();
-    state.tableLabel = null;
-    state.orders = [];
-    state.qrInvalid = true;
+  let gateTimer = 0;
+  function showGate(kind) {
+    clearTimeout(gateTimer);
     stopPolling();
-    updateTableFooter();
+    if (kind === "ended" || kind === "invalid") MOBA_TABLE.drop();
+    const [title, msg] = GATES[kind];
+    const saved = kind !== "opening" && store.get(CART_KEY, []).length > 0;
+    let gate = $(".gate");
+    if (!gate) {
+      gate = document.createElement("main");
+      gate.className = "gate";
+      document.body.append(gate);
+    }
+    gate.innerHTML = `
+      <img class="gate__logo" src="assets/logo-full.webp" alt="MOBA 모바 Korean Resto-Cafe">
+      <h1 class="gate__title">${esc(title)}</h1>
+      ${msg ? `<p class="gate__msg">${esc(msg)}</p>` : ""}
+      ${saved ? `<p class="gate__note">Your picks are saved on this phone.</p>` : ""}
+      ${kind === "offline" ? `<button class="cta cta--ink" type="button" data-retry>Try again</button>` : ""}
+      ${kind === "opening" ? "" : `<a class="gate__home" href="index.html">Back to MOBA home</a>`}`;
+    $("[data-retry]", gate)?.addEventListener("click", () => location.reload());
+    document.documentElement.classList.remove("locked");
+    document.documentElement.classList.add("gated");
+  }
+
+  // Open the menu, and close it again the moment the ordering window ends.
+  function liftGate() {
+    $(".gate")?.remove();
+    document.documentElement.classList.remove("gated");
+    clearTimeout(gateTimer);
+    gateTimer = setTimeout(() => showGate("expired"), MOBA_TABLE.get().orderBy - Date.now());
+  }
+
+  // A fresh scan: swap the QR token for a visit token. Only the visit token is kept.
+  // Returns the scan screen to show when it didn't work.
+  async function startVisit(qr) {
+    try {
+      const v = await MobaApi.startVisit(qr);
+      MOBA_TABLE.set({ visit: v.visit, orderBy: Date.now() + v.orderSeconds * 1000 });
+      MOBA_TABLE.clearScan();
+      state.tableLabel = v.table;
+      state.tableActive = v.active !== false;
+      state.orderingOpen = v.orderingOpen !== false;
+      return null;
+    } catch (err) {
+      if (err.code === "INVALID_TABLE" || err.code === "BAD_REQUEST") {
+        MOBA_TABLE.clearScan();
+        return "invalid";
+      }
+      if (err.code === "RATE_LIMITED") {
+        MOBA_TABLE.clearScan();
+        return "busy";
+      }
+      return "offline"; // the scan stays in this tab, so "Try again" can swap it
+    }
   }
 
   function tableDisplayLabel() {
@@ -848,9 +910,7 @@
 
     // Table slot
     if (!tbl) {
-      el.tableSlot.innerHTML = state.qrInvalid
-        ? `<p class="table-msg table-msg--warn">${QR_INVALID_MSG}</p>`
-        : `<p class="table-msg">To order, scan the QR code on your table.</p>`;
+      el.tableSlot.innerHTML = `<p class="table-msg">To order, scan the QR code on your table.</p>`;
       el.placeBtn.hidden = true;
     } else if (!state.tableActive) {
       el.tableSlot.innerHTML = `<p class="table-msg table-msg--warn">This table isn't taking orders right now. Please ask our staff.</p>`;
@@ -875,6 +935,7 @@
   async function placeOrder() {
     const tbl = MOBA_TABLE.get();
     if (placing || !state.cart.length || !tbl || hasBlockedLines()) return;
+    if (!MOBA_TABLE.canOrder()) return showGate("expired");
 
     placing = true;
     el.placeBtn.disabled = true;
@@ -903,7 +964,7 @@
 
     try {
       const order = await MobaApi.placeOrder({
-        token: tbl.token,
+        visit: tbl.visit,
         clientOrderId,
         items,
         expectedTotal,
@@ -928,9 +989,13 @@
     const code = err.code || err.message;
     const detail = err.detail;
     switch (code) {
-      case "INVALID_TABLE":
-        dropInvalidTable();
-        toast(QR_INVALID_MSG);
+      case "INVALID_VISIT":
+      case "VISIT_EXPIRED":
+        MOBA_TABLE.closeWindow();
+        showGate("expired");
+        break;
+      case "TABLE_BUSY":
+        toast("The kitchen has a few orders from this table to accept first. Please wait a moment or ask our staff.");
         break;
       case "TABLE_INACTIVE":
         state.tableActive = false;
@@ -987,8 +1052,8 @@
     el.listBody.innerHTML = `
       <div class="done">
         <p class="done__stamp" lang="ko" aria-hidden="true">주문 완료!</p>
-        <p class="done__id">Order #${o.orderNo}${displayTable ? ` · ${esc(displayTable)}` : ""}${o.guestNo ? ` · Guest ${o.guestNo}` : ""}</p>
-        <span class="status-chip status-chip--${o.status}">${STATUS_LABELS[o.status]?.[0] || o.status}</span>
+        <p class="done__id">Order #${esc(o.orderNo)}${displayTable ? ` · ${esc(displayTable)}` : ""}${o.guestNo ? ` · Guest ${esc(o.guestNo)}` : ""}</p>
+        <span class="status-chip status-chip--${esc(o.status)}">${esc(STATUS_LABELS[o.status]?.[0] || o.status)}</span>
         <p class="done__msg">It's with the kitchen. We'll bring it to your table as soon as it's ready.</p>
         <ul class="lines">${(o.items || []).map((l) => lineHTML(l, { editable: false })).join("")}</ul>
         <div class="done__total"><span>${plural(o.itemCount || o.items?.length || 0, "item", "items")} · taxes extra</span><strong>${rupee(o.total)}</strong></div>
@@ -1027,35 +1092,19 @@
     const tbl = MOBA_TABLE.get();
     if (!tbl) { stopPolling(); return; }
     try {
-      const data = await MobaApi.getTableState(tbl.token);
+      const data = await MobaApi.getTableState(tbl.visit);
       state.tableLabel = data.table;
       state.tableActive = data.active !== false;
       state.orderingOpen = data.orderingOpen !== false;
 
-      if (data.lastVisitClosedAt && new Date(data.lastVisitClosedAt).getTime() > tbl.scannedAt) {
-        MOBA_TABLE.drop();
-        state.orders = [];
-        state.tableLabel = null;
-        stopPolling();
-        updateTableFooter();
-        if (!el.listSheet.hidden) {
-          el.listBody.innerHTML = `<div class="done">
-            <p class="done__stamp" lang="ko" aria-hidden="true">같이 밥 먹어요</p>
-            <p class="done__msg">Thanks for eating with us! Scan the QR on your table to order again.</p>
-            <button class="cta cta--ink" type="button" data-close>Got it</button>
-          </div>`;
-          el.listFoot.hidden = true;
-          el.listSub.hidden = true;
-          el.listSheet.dataset.mode = "done";
-        }
-        return;
-      }
+      // Staff freed the table this phone ordered at: the visit is over.
+      if (data.visitEnded) return showGate("ended");
 
       state.orders = data.orders || [];
       updateTableFooter();
       if (!el.listSheet.hidden && el.listSheet.dataset.mode !== "done") renderList();
     } catch (err) {
-      if (err.code === "INVALID_TABLE") dropInvalidTable();
+      if (err.code === "INVALID_VISIT" || err.code === "VISIT_EXPIRED") showGate("expired");
     }
   }
 
@@ -1065,7 +1114,7 @@
       const data = await MobaApi.getMenu();
       if (!data || !data.categories) return;
       state.lastFetch = Date.now();
-      if (data.version === state.menuVersion) return;
+      if (JSON.stringify(data) === state.menuSig) return;
       ingest(data);
       state.cart = state.cart.map(cleanLine).filter(Boolean);
       persist();
@@ -1079,6 +1128,8 @@
         renderNotes();
       }
       updateBadge(false);
+      // An open order sheet shows prices from the old menu; redraw it so the total matches.
+      if (!el.listSheet.hidden && el.listSheet.dataset.mode !== "done") renderList();
     } catch {}
   }
 
@@ -1510,9 +1561,17 @@
       }, 120);
     });
 
+    const gated = () => document.documentElement.classList.contains("gated");
     document.addEventListener("visibilitychange", () => {
-      if (!document.hidden && Date.now() - state.lastFetch > 60000) refreshMenu();
-      if (!document.hidden) pollTableState();
+      if (document.hidden || gated()) return;
+      // A phone left asleep past the window may not have run its timer yet.
+      if (!MOBA_TABLE.canOrder()) return showGate("expired");
+      if (Date.now() - state.lastFetch > 60000) refreshMenu();
+      pollTableState();
+    });
+    // The back/forward cache restores the page as it was, open menu included.
+    window.addEventListener("pageshow", (e) => {
+      if (e.persisted && !gated() && !MOBA_TABLE.canOrder()) showGate("expired");
     });
   }
 
@@ -1543,6 +1602,16 @@
     const fromBubble = document.documentElement.classList.contains("bubble-cover");
     el.veg.setAttribute("aria-pressed", String(state.veg));
 
+    // No menu without a live table session: swap a fresh scan first, or show the scan screen
+    const qr = MOBA_TABLE.scan();
+    if (qr) {
+      if (!MOBA_TABLE.canOrder()) showGate("opening");
+      const failed = await startVisit(qr);
+      if (failed) return showGate(failed);
+    }
+    if (!MOBA_TABLE.canOrder()) return showGate(MOBA_TABLE.get() ? "expired" : "none");
+    liftGate();
+
     // Render from cache immediately
     const cached = store.get(MENU_KEY, null);
     if (cached?.data) {
@@ -1556,7 +1625,7 @@
       state.lastFetch = Date.now();
       if (data && data.categories) {
         const wasEmpty = !state.cats.length;
-        if (data.version !== state.menuVersion || wasEmpty) {
+        if (JSON.stringify(data) !== state.menuSig || wasEmpty) {
           ingest(data);
           if (wasEmpty) render(fromBubble);
           else rerender();
@@ -1570,8 +1639,8 @@
     }
 
     // Start table polling
-    const tbl = MOBA_TABLE.get();
-    if (tbl) startPolling();
+    updateTableFooter();
+    startPolling();
   }
 
   function render(fromBubble) {

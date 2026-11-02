@@ -110,32 +110,45 @@ await test("5. get_public_menu works and returns data", async () => {
   }
 });
 
-await test("6a. place_order with bad token → INVALID_TABLE", () =>
+await test("3b. staff functions refused before they run (migration 7 applied)", async () => {
+  const { error } = await anon.rpc("staff_dashboard", {});
+  assert(/permission denied for function/.test(error?.message || ""), `Expected permission denied, got ${error?.message}`);
+});
+
+await test("6a. start_visit with unknown QR → INVALID_TABLE", () =>
   expectRpcError(
     anon,
-    "place_order",
-    {
-      p_token: "00000000000000000000000000000000",
-      p_device: "00000000-0000-0000-0000-000000000000",
-      p_client_order_id: "00000000-0000-0000-0000-000000000001",
-      p_items: [],
-      p_expected_total: 0,
-    },
+    "start_visit",
+    { p_qr_token: "00000000000000000000000000000000", p_device: "00000000-0000-0000-0000-000000000000" },
     "INVALID_TABLE"
   )
 );
 
-await test("6b. get_table_state with bad token → INVALID_TABLE", () =>
+await test("6b. place_order with a QR-shaped token instead of a visit → INVALID_VISIT", () =>
+  expectRpcError(
+    anon,
+    "place_order",
+    {
+      p_visit: "00000000000000000000000000000000",
+      p_device: "00000000-0000-0000-0000-000000000000",
+      p_client_order_id: "00000000-0000-0000-0000-000000000001",
+      p_items: [{ dish_id: "00000000-0000-0000-0000-000000000000", qty: 1 }],
+      p_expected_total: 0,
+    },
+    "INVALID_VISIT"
+  )
+);
+
+await test("6c. get_table_state with unknown visit → INVALID_VISIT", () =>
   expectRpcError(
     anon,
     "get_table_state",
-    {
-      p_token: "zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz",
-      p_device: "00000000-0000-0000-0000-000000000000",
-    },
-    "INVALID_TABLE"
+    { p_visit: "0".repeat(64), p_device: "00000000-0000-0000-0000-000000000000" },
+    "INVALID_VISIT"
   )
 );
+
+await test("6d. anon cannot read visit tokens", () => expectDenied(anon, "table_visits"));
 
 await test("12. Storage: upload to menu-images → denied", async () => {
   const blob = new Blob(["test"], { type: "image/png" });

@@ -45,9 +45,10 @@
     ApiError,
     deviceId,
     getMenu: () => rpc("get_public_menu", {}),
-    getTableState: (token) => rpc("get_table_state", { p_token: token, p_device: deviceId() }),
-    placeOrder: ({ token, clientOrderId, items, expectedTotal }) =>
-      rpc("place_order", { p_token: token, p_device: deviceId(), p_client_order_id: clientOrderId,
+    startVisit: (qrToken) => rpc("start_visit", { p_qr_token: qrToken, p_device: deviceId() }),
+    getTableState: (visit) => rpc("get_table_state", { p_visit: visit, p_device: deviceId() }),
+    placeOrder: ({ visit, clientOrderId, items, expectedTotal }) =>
+      rpc("place_order", { p_visit: visit, p_device: deviceId(), p_client_order_id: clientOrderId,
                            p_items: items, p_expected_total: expectedTotal }, 15000),
     imageUrl: (path) => (path ? `${supabaseUrl}/storage/v1/object/public/menu-images/${path}` : null),
   };
