@@ -49,7 +49,15 @@ function freshBase(now) {
   return {
     version: VERSION,
     day: null,
-    settings: { id: 1, restaurant_name: "MOBA", ordering_open: true, session_idle_hours: 6, menu_version: 1 },
+    settings: {
+      id: 1, restaurant_name: "MOBA", ordering_open: true, session_idle_hours: 6, menu_version: 1,
+      instagram_url: "https://instagram.com/moba.cafe", google_review_url: "https://g.page/r/moba/review",
+      facebook_url: null, youtube_url: null, whatsapp_number: "+91 98765 43210",
+      zomato_url: "https://zomato.com/restaurant/moba", swiggy_url: null,
+      address: "123 Anna Nagar, Chennai 600040", map_url: "https://maps.app.goo.gl/moba",
+      hours_text: "Mon–Sun: 11 AM – 11 PM", tagline: "같이 밥 먹어요 · Gather for food",
+      contact_phone: "+91 44 2345 6789", contact_email: "hello@moba.cafe", wifi_password: "moba2026",
+    },
     staff: { user_id: "demo-staff", display_name: "Ji-woo Kim", role: "owner", is_active: true, email: "owner@moba.cafe" },
     categories: menu.categories.map((c) => ({ ...c, created_at: stamp, updated_at: stamp })),
     category_groups: menu.category_groups,

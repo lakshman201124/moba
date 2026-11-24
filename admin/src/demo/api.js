@@ -316,6 +316,10 @@ export const settings = {
     getDb().settings.ordering_open = open;
     return done(undefined);
   },
+  updateSettings(fields) {
+    Object.assign(getDb().settings, fields);
+    return done(undefined);
+  },
 };
 
 export const dashboard = {
