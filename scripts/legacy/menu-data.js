@@ -300,6 +300,7 @@ window.MOBA_MENU = (() => {
     D("desserts", "brownie", "Brownie", 89, null, "A dense, fudgy chocolate brownie with a rich cocoa finish.", { group: "cakes" }),
     D("desserts", "brownie-ice-cream", "Brownie with Ice Cream", 189, null, "Warm chocolate brownie served with a scoop of creamy vanilla ice cream.", { group: "cakes" }),
     D("desserts", "burnt-butter-toast", "Burnt Butter Toast", 249, null, "Warm, crispy burnt butter and caramel toast with a scoop of ice cream: hot-and-cold in one bite.", { group: "cakes" }),
+    D("desserts", "korean-cinnabon", "Korean Cinnabon with Ice Cream", 289, null, "A buttery cinnamon roll caramelised on the pan, finished with honey, creamy ice cream, and toasted pine nuts.", { group: "cakes" }),
     D("desserts", "mango-haneul", "Seoul Mango Haneul", 249, null, "Creamy vanilla ice cream topped with ripe mango, dry fruits, and nata de coco.", { group: "sundaes" }),
     D("desserts", "seoark-snowberry", "Seoark Snowberry", 249, null, "Vanilla ice cream layered with strawberry and blueberry, finished with thick milk, crunchy dry fruits, and nata de coco.", { group: "sundaes" }),
     D("desserts", "choco-han-fusion", "Choco Han Fusion", 239, null, "Rich chocolate ice cream loaded with choco chips, brownie pieces, chocolate sauce, and chewy tapioca pearls.", { group: "sundaes" }),
