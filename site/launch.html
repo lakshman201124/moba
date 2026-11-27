@@ -45,13 +45,13 @@ section,header{position:relative}
 .loud-sun{color:var(--sun);-webkit-text-stroke-color:var(--blue-d);text-shadow:0 6px 0 #142C57,3px 6px 0 #142C57}
 
 /* buttons */
-.pill{display:inline-flex;align-items:center;justify-content:center;gap:10px;border:var(--ol);background:var(--orange);color:var(--ink);border-radius:999px;
+.pill{display:inline-flex;align-items:center;justify-content:center;gap:10px;border:var(--ol);background:var(--orange);color:var(--cream);border-radius:999px;
   padding:16px 26px;font:400 18px/1 "Bagel Fat One",sans-serif;text-transform:uppercase;letter-spacing:.02em;text-decoration:none;white-space:nowrap;
   box-shadow:var(--print);transition:transform .18s var(--ease),box-shadow .18s var(--ease);cursor:pointer;-webkit-tap-highlight-color:transparent}
 .pill svg{width:24px;height:24px;flex:none}
 @media (hover:hover){.pill:hover{transform:translate(-2px,-2px);box-shadow:7px 7px 0 var(--blue)}}
 .pill:active{transform:translate(4px,4px);box-shadow:1px 1px 0 var(--blue)}
-.pill.lemon{background:var(--lemon)} .pill.sun{background:var(--sun)} .pill.cream{background:var(--cream);color:var(--blue)}
+.pill.lemon{background:var(--lemon);color:var(--ink)} .pill.sun{background:var(--sun);color:var(--ink)} .pill.cream{background:var(--cream);color:var(--blue)}
 .pill[aria-disabled="true"]{background:var(--cream);color:var(--mute);border-style:dashed;box-shadow:none;cursor:not-allowed}
 .pill[aria-disabled="true"]:hover{transform:none;box-shadow:none}
 .chip{display:inline-flex;align-items:center;gap:6px;border:2.5px solid var(--blue);background:var(--cream);border-radius:999px;padding:7px 14px;font-size:16px;line-height:1.3}
@@ -318,7 +318,7 @@ section,header{position:relative}
 .pill .go{width:20px;height:20px}
 @media (max-width:560px){.top .chip{display:none}.top .pill.home{padding:11px 14px}}
 
-.peek{background:var(--sky);padding:clamp(64px,9vw,104px) 0;border-top:var(--ol)}
+.peek{background:var(--cream);padding:clamp(64px,9vw,104px) 0;border-top:var(--ol)}
 .peek .grid{display:grid;grid-template-columns:1fr;gap:28px;align-items:center}
 .peek h2{font-size:clamp(42px,9vw,84px)}
 .peek p{font-size:clamp(19px,2vw,22px);max-width:34ch;margin:18px 0 22px}
@@ -395,8 +395,6 @@ section,header{position:relative}
   <span class="ball blur o" style="--s:70px;left:-30px;top:62%"></span>
   <span class="ball" style="--s:18px;right:8%;top:6%;--t:5s"></span>
   <span class="ball o" style="--s:12px;left:46%;top:12%;--t:7s"></span>
-  <span class="ball" style="--s:26px;right:4%;bottom:10%;--t:6.5s"></span>
-  <span class="ball o" style="--s:14px;left:8%;bottom:6%"></span>
   <div class="wrap hero-grid">
     <h1 class="d loud" id="h-hero">We printed our own <span class="money">money.</span></h1>
 
@@ -413,7 +411,6 @@ section,header{position:relative}
     </div>
 
     <div class="hero-copy">
-      <p class="lede">Get a <b>₹100 MOBA Note</b>. Join our WhatsApp community to switch it on. Spend it on&nbsp;1&nbsp;Dec.</p>
       <div class="count" data-count aria-live="off">
         <div class="u"><span class="n" data-d>00</span><span class="l">Days</span></div>
         <div class="u"><span class="n" data-h>00</span><span class="l">Hrs</span></div>
@@ -705,7 +702,7 @@ section,header{position:relative}
     </div>
     <div class="ctas">
       <a class="pill lemon" href="#" data-join><svg aria-hidden="true"><use href="#wa"/></svg>Join to activate</a>
-      <a class="pill cream" role="link" aria-disabled="true" title="Address coming soon">Get directions · soon</a>
+      <a class="pill cream" role="link" aria-disabled="true" title="Address coming soon" data-maps data-maps-label="Get directions">Get directions · soon</a>
     </div>
     <p class="fine">One note per person, per bill. No minimum bill. Valid on launch day at MOBA Korean Resto-Cafe. Not redeemable for cash.</p>
   </div>
@@ -721,10 +718,10 @@ section,header{position:relative}
       <span class="tag">K-Corn Dogg<span>cheese pull included</span></span>
     </div>
     <div>
-      <h2 class="d loud-cream" id="h-peek">Hungry already?</h2>
+      <h2 class="d loud" id="h-peek">Hungry already?</h2>
       <p>See what's cooking at MOBA before 1&nbsp;Dec.</p>
       <div class="menu-chips"><span class="chip">K-Corn Dogg</span><span class="chip">Rameyon</span><span class="chip">Rabokki</span><span class="chip">Boba Bar</span></div>
-      <a class="pill sun big" href="index.html" data-bubble>Take me to MOBA<svg class="go" aria-hidden="true"><use href="#go"/></svg></a>
+      <a class="pill sun big" href="index.html" data-bubble data-maps>Take me to MOBA<svg class="go" aria-hidden="true"><use href="#go"/></svg></a>
     </div>
   </div>
 </section>
@@ -740,6 +737,7 @@ section,header{position:relative}
   // ---- settings (fill these in) ----
   var LAUNCH = new Date('2026-12-01T00:00:00+05:30'); // set to opening time when known
   var JOIN_URL = '';                                    // WhatsApp community invite link
+  var MAPS_URL = '';                                    // Google Maps link to the store
 
   var reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
   var pad = function(n){ return (n < 10 ? '0' : '') + n; };
@@ -768,6 +766,12 @@ section,header{position:relative}
   document.querySelectorAll('[data-join]').forEach(function(a){
     if (JOIN_URL){ a.href = JOIN_URL; a.target = '_blank'; a.rel = 'noopener'; }
     else a.addEventListener('click', function(e){ e.preventDefault(); say('WhatsApp link coming soon'); });
+  });
+  // once MAPS_URL is set, these buttons open Google Maps
+  if (MAPS_URL) document.querySelectorAll('[data-maps]').forEach(function(a){
+    a.href = MAPS_URL; a.target = '_blank'; a.rel = 'noopener';
+    a.removeAttribute('data-bubble'); a.removeAttribute('aria-disabled'); a.removeAttribute('role'); a.removeAttribute('title');
+    if (a.dataset.mapsLabel) a.textContent = a.dataset.mapsLabel;
   });
   document.querySelectorAll('[aria-disabled="true"]').forEach(function(a){
     a.addEventListener('click', function(e){ e.preventDefault(); say('Store address coming soon'); });
