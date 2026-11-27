@@ -20,6 +20,69 @@
         ],
         "createdAt": "2026-10-08T07:23:18.605Z",
         "reason": "False positive: the only zero-offset shadows are hard, unblurred selection/focus rings (.add.is-in, .search:focus-within), not glows"
+      },
+      {
+        "rule": "cream-palette",
+        "value": "*",
+        "files": [
+          "design/launch-day/index.html"
+        ],
+        "createdAt": "2026-11-27T11:25:51.729Z",
+        "reason": "cream #FFF8E7 is a locked brand colour in PRODUCT.md"
+      },
+      {
+        "rule": "marquee",
+        "value": "*",
+        "files": [
+          "design/launch-day/index.html"
+        ],
+        "createdAt": "2026-11-27T11:25:51.984Z",
+        "reason": "user explicitly asked for a marquee on the launch page"
+      },
+      {
+        "rule": "nested-cards",
+        "value": "*",
+        "files": [
+          "design/launch-day/index.html"
+        ],
+        "createdAt": "2026-11-27T11:25:52.269Z",
+        "reason": "chat bubbles inside a polaroid depict a phone screen photo, not UI card nesting"
+      },
+      {
+        "rule": "low-contrast",
+        "value": "*",
+        "files": [
+          "design/launch-day/index.html"
+        ],
+        "createdAt": "2026-11-27T11:41:38.886Z",
+        "reason": "only flags left are 32px+ Bagel Fat One display type with 3px blue stroke + blue shadow (incumbent .loud style); white-fill 'Members eat better' outline headline was the user's explicit request"
+      },
+      {
+        "rule": "cramped-padding",
+        "value": "*",
+        "files": [
+          "design/launch-day/index.html"
+        ],
+        "createdAt": "2026-11-27T11:41:39.172Z",
+        "reason": "flags are full-bleed colour bands, marquees, the polaroid photo area and the candy plate; content is inset by .wrap / plate padding, verified in screenshots"
+      },
+      {
+        "rule": "clipped-overflow-container",
+        "value": "*",
+        "files": [
+          "design/launch-day/index.html"
+        ],
+        "createdAt": "2026-11-27T11:41:39.515Z",
+        "reason": "bands use overflow-x:clip on purpose to crop decorative balls and the tentacle at the page edge"
+      },
+      {
+        "rule": "all-caps-body",
+        "value": "*",
+        "files": [
+          "design/launch-day/index.html"
+        ],
+        "createdAt": "2026-11-27T11:42:01.267Z",
+        "reason": "uppercase is only on short Bagel Fat One display lines and buttons (brand style), e.g. 'Paid with your note? Now play.'"
       }
     ]
   }
