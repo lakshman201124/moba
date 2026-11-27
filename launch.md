@@ -19,6 +19,7 @@
 | Colours (v2) | Lighter page: cream base (hero + step 1), orange step 2 and finale kept, sky step 3 kept, **cream** game section (no dark navy), **cream** members section with white outlined headline, **cream** footer, lemon marquee kept. (White was tried, then switched to cream.) Podium in light tints (peach / pale yellow / pale blue). |
 | Games (v2) | Game 1 Dalgona shown clearly, tagged **Day 1 · 1 Dec**. Games 2 and 3 **blurred** with a one-line hint and "Revealed soon"; line under them: "Games 2 and 3 drop in the WhatsApp community first." (confirmed: games 2–3 are announced in the community first). |
 | Hero copy (v2) | Lede now says how activation works: "Join our WhatsApp community to switch it on." Button: "Join to activate my ₹100". |
+| v3 (live page `site/launch.html`) | Hero text line removed (note + countdown + button only). Two balls by the Join button removed. Orange buttons use cream text. Bottom "Hungry already?" section is cream, footer removed. "Take me to MOBA" and "Get directions" open Google Maps once `MAPS_URL` is set in the page script (until then "Take me to MOBA" goes to the home page). Top-bar "Home →" still goes to the home page. Home menu has a "Launch day" link. |
 
 ## Still open
 1. Opening time → update `LAUNCH` and the "Opening time coming soon" line.
