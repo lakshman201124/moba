@@ -1,0 +1,16 @@
+{
+  "name": "moba-tests",
+  "private": true,
+  "description": "Playwright Test suite for MOBA. Kept separate from site/ and admin/ so their builds are untouched.",
+  "type": "module",
+  "scripts": {
+    "test": "playwright test",
+    "test:phase0": "playwright test --grep @phase0",
+    "test:live": "playwright test --project=live",
+    "report": "playwright show-report"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "4.14.1",
+    "@playwright/test": "1.65.1"
+  }
+}
